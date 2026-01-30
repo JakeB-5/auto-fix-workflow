@@ -13,6 +13,9 @@ import {
 // Re-export common types for external use
 export * from './common/types/index.js';
 
+// Import init command
+import { init } from './commands/init/index.js';
+
 // Import tool definitions
 import { listIssuesTool, handleListIssues } from './github/list-issues/index.js';
 import { getIssueTool, handleGetIssue } from './github/get-issue/index.js';
@@ -431,8 +434,30 @@ async function main(): Promise<void> {
   });
 }
 
-// Run if this is the main module
-main().catch((error: unknown) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+// Check for CLI commands before starting MCP server
+const args = process.argv.slice(2);
+const command = args[0];
+
+if (command === 'init') {
+  // Run init command
+  init(args.slice(1)).then((result) => {
+    if (!result.success) {
+      // Check if it's a help request (not an error)
+      if (result.error.message === 'Help requested' || result.error.message === 'Version requested') {
+        process.exit(0);
+      }
+      console.error('Init failed:', result.error.message);
+      process.exit(1);
+    }
+    process.exit(0);
+  }).catch((error: unknown) => {
+    console.error('Init failed:', error);
+    process.exit(1);
+  });
+} else {
+  // Run MCP server (default)
+  main().catch((error: unknown) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+}

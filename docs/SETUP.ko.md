@@ -4,8 +4,35 @@
 
 > 이 가이드는 auto-fix-workflow 사용 전 필요한 초기 설정을 다룹니다. 이 설정들은 자동화할 수 없으며 반드시 수동으로 설정해야 합니다.
 
+## Init 명령어로 빠른 설정
+
+auto-fix-workflow를 설정하는 가장 쉬운 방법은 init 명령어를 사용하는 것입니다:
+
+```bash
+npx auto-fix-workflow init
+```
+
+이 대화형 명령어는 다음 작업을 수행합니다:
+1. GitHub 토큰 입력 요청
+2. Asana 토큰 입력 요청
+3. 토큰 유효성 검증
+4. `.mcp.json` 및 `.auto-fix.yaml` 생성
+5. `.gitignore`에 `.auto-fix.yaml` 추가
+
+init 실행 후 수동으로 설정해야 할 사항:
+- `.auto-fix.yaml`에서 GitHub owner와 repo 설정
+- `.auto-fix.yaml`에서 Asana workspaceId와 projectId 설정
+- GitHub 라벨 생성 (아래 참조)
+- autofixing 브랜치 생성
+
+비대화형 설정 (CI/CD용):
+```bash
+GITHUB_TOKEN=xxx ASANA_TOKEN=yyy npx auto-fix-workflow init --non-interactive
+```
+
 ## 목차
 
+- [Init 명령어로 빠른 설정](#init-명령어로-빠른-설정)
 - [GitHub 설정](#github-설정)
 - [Asana 설정](#asana-설정)
 - [Sentry 설정](#sentry-설정)

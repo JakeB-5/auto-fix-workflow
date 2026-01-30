@@ -18,6 +18,26 @@ GitHub 이슈 관리 및 코드 수정 워크플로우 자동화를 위한 MCP (
 npm install auto-fix-workflow
 ```
 
+## 초기 설정
+
+init 명령어로 프로젝트를 설정합니다:
+
+```bash
+npx auto-fix-workflow init
+```
+
+실행 결과:
+- `.mcp.json` 생성 (MCP 서버 설정)
+- `.auto-fix.yaml` 생성 (워크플로우 설정 + 토큰)
+- `.gitignore`에 `.auto-fix.yaml` 추가 (보안)
+
+옵션:
+- `--non-interactive`: GITHUB_TOKEN, ASANA_TOKEN 환경변수에서 토큰 읽기
+- `--force`: 기존 설정 파일 덮어쓰기
+- `--skip-validation`: 토큰 검증 건너뛰기
+
+자세한 설정 방법은 [초기 설정 가이드](./docs/SETUP.ko.md)를 참조하세요.
+
 ## 빠른 시작
 
 ### MCP 서버로 사용
@@ -110,6 +130,19 @@ worktree:
 | `autofix` | 전체 자동 수정 워크플로우 실행 |
 
 ## 명령어
+
+### Init 명령어
+
+프로젝트 설정 초기화:
+
+```bash
+npx auto-fix-workflow init
+```
+
+옵션:
+- `--non-interactive`: 환경변수에서 토큰 읽기
+- `--force`: 기존 파일 덮어쓰기
+- `--skip-validation`: 토큰 검증 건너뛰기
 
 ### Triage 명령어
 

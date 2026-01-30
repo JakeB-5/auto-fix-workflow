@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Init Command** (`npx auto-fix-workflow init`)
+  - Interactive token input for GitHub and Asana
+  - Automatic `.mcp.json` generation (MCP server config)
+  - Automatic `.auto-fix.yaml` generation with tokens
+  - Automatic `.gitignore` update for security
+  - Token validation (online API check + offline format check)
+  - Non-interactive mode for CI/CD (`--non-interactive`)
+  - Force overwrite option (`--force`)
+  - Skip validation option (`--skip-validation`)
+
 ## [0.1.1] - 2026-01-30
 
 ### Added

@@ -18,6 +18,26 @@ MCP (Model Context Protocol) server for automated GitHub issue management and co
 npm install auto-fix-workflow
 ```
 
+## Initial Setup
+
+Run the init command to configure the project:
+
+```bash
+npx auto-fix-workflow init
+```
+
+This will:
+- Create `.mcp.json` with MCP server configuration
+- Create `.auto-fix.yaml` with workflow settings and tokens
+- Add `.auto-fix.yaml` to `.gitignore` for security
+
+Options:
+- `--non-interactive`: Read tokens from GITHUB_TOKEN and ASANA_TOKEN environment variables
+- `--force`: Overwrite existing configuration files
+- `--skip-validation`: Skip token validation
+
+For detailed setup instructions, see [Setup Guide](./docs/SETUP.md).
+
 ## Quick Start
 
 ### As MCP Server
@@ -110,6 +130,19 @@ worktree:
 | `autofix` | Execute full auto-fix workflow |
 
 ## Commands
+
+### Init Command
+
+Initialize project configuration:
+
+```bash
+npx auto-fix-workflow init
+```
+
+Options:
+- `--non-interactive`: Read tokens from environment variables
+- `--force`: Overwrite existing files
+- `--skip-validation`: Skip token validation
 
 ### Triage Command
 

@@ -4,8 +4,35 @@ English | [한국어](./SETUP.ko.md)
 
 > This guide covers the initial setup required before using auto-fix-workflow. These settings cannot be automated and must be configured manually.
 
+## Quick Setup with Init Command
+
+The easiest way to set up auto-fix-workflow is using the init command:
+
+```bash
+npx auto-fix-workflow init
+```
+
+This interactive command will:
+1. Ask for your GitHub token
+2. Ask for your Asana token
+3. Validate the tokens
+4. Create `.mcp.json` and `.auto-fix.yaml`
+5. Add `.auto-fix.yaml` to `.gitignore`
+
+After running init, you'll need to manually configure:
+- GitHub owner and repo in `.auto-fix.yaml`
+- Asana workspaceId and projectId in `.auto-fix.yaml`
+- Create GitHub labels (see below)
+- Create autofixing branch
+
+For non-interactive setup (CI/CD):
+```bash
+GITHUB_TOKEN=xxx ASANA_TOKEN=yyy npx auto-fix-workflow init --non-interactive
+```
+
 ## Table of Contents
 
+- [Quick Setup with Init Command](#quick-setup-with-init-command)
 - [GitHub Setup](#github-setup)
 - [Asana Setup](#asana-setup)
 - [Sentry Setup](#sentry-setup)
