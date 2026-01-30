@@ -13,6 +13,8 @@ depends: "common/types, analyzer/task-analyzer, analyzer/code-locator"
 
 ## Requirement: REQ-001 - GitHub Issue 템플릿 생성
 
+시스템은 분석 결과를 GitHub Issue 템플릿 형식으로 변환해야 한다(SHALL).
+
 ### Scenario: 완전한 분석 결과를 Issue로 변환
 
 - **GIVEN** task-analyzer에서 `confidence: "high"` 결과가 반환됨

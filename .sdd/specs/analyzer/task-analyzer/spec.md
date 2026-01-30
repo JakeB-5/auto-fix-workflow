@@ -13,6 +13,8 @@ depends: "common/types"
 
 ## Requirement: REQ-001 - 재현 가능성 판단
 
+시스템은 Asana 태스크의 재현 가능성을 판단하여 confidence 점수를 평가해야 한다(SHALL).
+
 ### Scenario: 명확한 재현 단계가 있는 경우
 
 - **GIVEN** Asana 태스크에 단계별 재현 방법이 기술되어 있음

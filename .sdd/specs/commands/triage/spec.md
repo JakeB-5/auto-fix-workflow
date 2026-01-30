@@ -35,6 +35,26 @@ This specification follows:
 
 ---
 
+## Requirement: REQ-001 - Asana 태스크 분석 및 변환
+
+시스템은 Asana 태스크를 분석하여 GitHub Issue로 변환해야 한다(SHALL).
+
+### Scenario: 충분한 정보가 있는 태스크
+
+- **GIVEN** Asana 태스크에 명확한 재현 단계와 에러 메시지가 있음
+- **WHEN** /triage 명령이 해당 태스크를 분석할 때
+- **THEN** GitHub Issue가 생성되어야 함
+- **AND** Asana 태스크에 "triaged" 태그가 추가되어야 함
+
+### Scenario: 정보가 부족한 태스크
+
+- **GIVEN** Asana 태스크에 모호한 설명만 있음
+- **WHEN** /triage 명령이 해당 태스크를 분석할 때
+- **THEN** GitHub Issue가 생성되지 않아야 함
+- **AND** Asana 태스크에 "needs-more-info" 태그가 추가되어야 함
+
+---
+
 ## 2. Command Signature
 
 ### 2.1 Syntax

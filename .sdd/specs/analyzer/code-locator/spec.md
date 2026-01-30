@@ -13,6 +13,8 @@ depends: "common/types"
 
 ## Requirement: REQ-001 - 스택트레이스 파싱
 
+시스템은 다양한 형식의 스택트레이스를 파싱하여 파일명, 함수명, 라인 번호를 추출해야 한다(SHALL).
+
 ### Scenario: JavaScript/TypeScript 스택트레이스
 
 - **GIVEN** 다음 형식의 스택트레이스가 입력됨
