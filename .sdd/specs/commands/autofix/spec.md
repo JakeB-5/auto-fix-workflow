@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: commands
 feature: autofix
-depends: [github/list-issues, workflow/group-issues, git/manage-worktree, checks/run-checks, github/create-pr, github/update-issue]
+depends: "github/list-issues, workflow/group-issues, git/manage-worktree, checks/run-checks, github/create-pr, github/update-issue"
 ---
 
 # /autofix Slash Command

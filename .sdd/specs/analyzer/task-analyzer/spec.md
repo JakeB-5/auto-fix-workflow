@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: analyzer
 feature: task-analyzer
-depends: [common/types]
+depends: "common/types"
 ---
 
 # Task Analyzer

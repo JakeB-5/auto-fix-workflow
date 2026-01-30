@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: github
 feature: get-issue
-depends: [common/types]
+depends: "common/types"
 ---
 
 # Get Issue

@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: analyzer
 feature: issue-generator
-depends: [common/types, analyzer/task-analyzer, analyzer/code-locator]
+depends: "common/types, analyzer/task-analyzer, analyzer/code-locator"
 ---
 
 # Issue Generator

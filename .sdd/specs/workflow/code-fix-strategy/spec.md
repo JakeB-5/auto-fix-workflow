@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: workflow
 feature: code-fix-strategy
-depends: [common/types]
+depends: "common/types"
 ---
 
 # Code Fix Strategy

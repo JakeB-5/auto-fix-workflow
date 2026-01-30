@@ -1,9 +1,10 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: asana
 feature: analyze-task
-depends: [common/types, asana/get-task]
+depends: "common/types, asana/get-task"
 ---
 
 # Analyze Asana Task

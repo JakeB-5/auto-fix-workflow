@@ -1,7 +1,14 @@
+---
+status: draft
+created: 2026-01-30
+constitution_version: "1.1.0"
+domain: commands
+feature: triage
+depends: "asana/analyze-task, github/create-issue"
+---
+
 # /triage Command Specification
 
-> **Status**: Draft v1.0
-> **Created**: 2025-01-30
 > **Purpose**: Asana Task → GitHub Issue conversion command specification
 
 ---

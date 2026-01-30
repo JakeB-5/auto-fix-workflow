@@ -1,6 +1,7 @@
 ---
 status: draft
 created: 2026-01-30
+constitution_version: "1.1.0"
 domain: common
 feature: error-handler
 depends: null
