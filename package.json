@@ -1,0 +1,66 @@
+{
+  "name": "auto-fix-workflow",
+  "version": "0.1.0",
+  "description": "Auto-fix workflow MCP server for GitHub issue automation",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "auto-fix-workflow": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JakeB-5/auto-fix-workflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JakeB-5/auto-fix-workflow/issues"
+  },
+  "homepage": "https://github.com/JakeB-5/auto-fix-workflow#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "mcp",
+    "github",
+    "automation",
+    "auto-fix"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@octokit/rest": "^20.0.0",
+    "@types/mdast": "^4.0.4",
+    "asana": "^3.0.0",
+    "glob": "^10.0.0",
+    "pino": "^8.0.0",
+    "pino-pretty": "^10.0.0",
+    "remark": "^15.0.1",
+    "simple-git": "^3.0.0",
+    "yaml": "^2.0.0",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.0.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

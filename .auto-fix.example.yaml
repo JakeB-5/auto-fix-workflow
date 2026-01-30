@@ -1,0 +1,50 @@
+# Auto-fix Workflow Configuration Example
+# Copy this file to .auto-fix.yaml and fill in your values
+
+# GitHub Configuration
+github:
+  token: ${GITHUB_TOKEN}  # Or set directly (not recommended)
+  owner: your-org
+  repo: your-repo
+  # labels:
+  #   - auto-fix
+  #   - needs-review
+
+# Asana Configuration (optional)
+asana:
+  token: ${ASANA_TOKEN}
+  workspaceId: "your-workspace-id"
+  projectId: "your-project-id"
+  # sectionMappings:
+  #   triage: "Triage"
+  #   inProgress: "In Progress"
+  #   done: "Done"
+
+# Sentry Configuration (optional)
+# sentry:
+#   dsn: ${SENTRY_DSN}
+#   organization: your-org
+#   project: your-project
+
+# Worktree Configuration
+worktree:
+  basePath: .worktrees
+  maxConcurrent: 3
+  cleanupOnSuccess: true
+  cleanupOnFailure: false
+
+# Quality Checks Configuration
+checks:
+  enabled:
+    - lint
+    - typecheck
+    - test
+  timeout: 300000  # 5 minutes
+  retryCount: 3
+  failFast: true
+
+# Logging Configuration
+logging:
+  level: info  # debug | info | warn | error
+  format: json  # json | pretty
+  # file: logs/auto-fix.log
