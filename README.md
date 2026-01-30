@@ -178,6 +178,171 @@ Create a [Personal Access Token](https://app.asana.com/0/developer-console) in A
 | Write tasks | Update task status, add comments |
 | Read projects | Access project information |
 
+## Workflow Examples
+
+### Example 1: Triage Asana Tasks
+
+Analyze Asana tasks and convert them to GitHub Issues:
+
+```
+User: /triage
+
+Claude: 🔍 Scanning Asana tasks in "To Triage" section...
+
+📋 Found 3 tasks to analyze:
+
+Task #12345: "Save button error"
+├── ✅ Reproduction steps: Clear
+├── ✅ Error message: TypeError - id property access error
+├── ✅ Related file: src/components/Editor.tsx (handleSave function)
+├── ✅ Root cause: document object accessed before initialization
+└── 🎫 GitHub Issue #45 created
+
+Task #12346: "App is slow"
+├── ❌ Reproduction steps: Unclear
+├── ❌ Specific symptoms: Unclear
+└── 📝 Added "needs-more-info" tag to Asana
+
+Task #12347: "Export PDF fails"
+├── ✅ Reproduction steps: Clear
+├── ✅ Error message: Found
+└── 🎫 GitHub Issue #46 created
+
+📊 Results:
+- ✅ Converted: 2 tasks
+- ⏳ Needs more info: 1 task
+```
+
+### Example 2: Auto-Fix Issues
+
+Automatically fix GitHub issues with the `auto-fix` label:
+
+```
+User: /autofix
+
+Claude: 🔍 Fetching issues with auto-fix label...
+
+📋 Pending Issues (5):
+
+Group 1: canvas-core (3 issues)
+  - #123: TypeError in handleSave
+  - #124: Null reference in renderPage
+  - #125: Missing validation in exportPDF
+
+Group 2: ui (1 issue)
+  - #130: Button disabled state not working
+
+Group 3: editor (1 issue)
+  - #132: Keyboard shortcut conflict
+
+Select issues to process:
+1. All issues (5 issues, 3 worktrees)
+2. Select specific groups
+3. Select specific issues
+
+User: 1
+
+Claude:
+🚀 Starting auto-fix...
+
+[Worktree 1/3] fix/issue-123-124-125 (canvas-core)
+├── 📁 Worktree created
+├── 🔍 Analyzing issues...
+├── ✏️ Applying fixes...
+├── 🧪 Running checks...
+│   ├── ✅ typecheck (passed)
+│   ├── ✅ lint (passed)
+│   └── ✅ test (passed)
+├── 📤 PR #201 created
+└── 🧹 Worktree cleaned up
+
+[Worktree 2/3] fix/issue-130 (ui)
+├── 📁 Worktree created
+├── 🔍 Analyzing issue...
+├── ✏️ Applying fix...
+├── 🧪 Running checks...
+│   ├── ✅ typecheck (passed)
+│   ├── ✅ lint (passed)
+│   └── ✅ test (passed)
+├── 📤 PR #202 created
+└── 🧹 Worktree cleaned up
+
+[Worktree 3/3] fix/issue-132 (editor)
+├── 📁 Worktree created
+├── 🔍 Analyzing issue...
+├── ✏️ Applying fix...
+├── 🧪 Running checks...
+│   ├── ✅ typecheck (passed)
+│   ├── ❌ test (failed - shortcut conflict with existing binding)
+│   └── 🔄 Retry 1/3...
+├── ✏️ Adjusting fix...
+├── 🧪 Running checks...
+│   ├── ✅ typecheck (passed)
+│   ├── ✅ lint (passed)
+│   └── ✅ test (passed)
+├── 📤 PR #203 created
+└── 🧹 Worktree cleaned up
+
+📊 Results:
+- ✅ Success: 5 issues (PR #201, #202, #203)
+- ❌ Failed: 0 issues
+
+All PRs target the 'autofixing' branch for manual review.
+```
+
+### Example 3: Fix Specific Issues
+
+Fix only specific issues:
+
+```
+User: /autofix --issues 123,124
+
+Claude:
+🚀 Processing issues #123, #124...
+
+[Worktree] fix/issue-123-124
+├── 📁 Worktree created
+├── 🔍 Analyzing 2 issues...
+├── ✏️ Applying fixes...
+├── 🧪 Running checks... ✅ All passed
+├── 📤 PR #204 created (Closes #123, #124)
+└── 🧹 Worktree cleaned up
+
+📊 Results:
+- ✅ Success: 2 issues
+- PR: https://github.com/your-org/your-repo/pull/204
+```
+
+### Example 4: Dry Run Mode
+
+Preview what would happen without making changes:
+
+```
+User: /autofix --dry-run
+
+Claude:
+🔍 [DRY RUN] Analyzing auto-fix issues...
+
+📋 Would process 3 issues:
+
+Group: canvas-core
+├── #123: TypeError in handleSave
+│   └── Fix: Add null check for document object
+├── #124: Null reference in renderPage
+│   └── Fix: Initialize page state before render
+└── #125: Missing validation in exportPDF
+    └── Fix: Add input validation for PDF options
+
+Planned actions:
+1. Create worktree: fix/issue-123-124-125
+2. Apply 3 fixes
+3. Run checks: typecheck, lint, test
+4. Create PR targeting 'autofixing' branch
+5. Clean up worktree
+
+No changes made (dry run mode).
+```
+
 ## Development
 
 ```bash
