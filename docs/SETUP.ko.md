@@ -338,6 +338,11 @@ actions:
 프로젝트 루트에 `.auto-fix.yaml` 생성:
 
 ```yaml
+# 토큰 (이 파일은 보안을 위해 .gitignore에 추가됩니다)
+tokens:
+  github: "your-github-token"
+  asana: "your-asana-token"
+
 github:
   owner: "your-org"
   repo: "your-repo"

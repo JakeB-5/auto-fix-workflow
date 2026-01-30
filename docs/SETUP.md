@@ -335,9 +335,14 @@ actions:
 
 ## Configuration File
 
-Create `.auto-fix.yaml` in your project root:
+After running `npx auto-fix-workflow init`, the `.auto-fix.yaml` file will be created with this structure:
 
 ```yaml
+# Tokens (this file is added to .gitignore for security)
+tokens:
+  github: "your-github-token"
+  asana: "your-asana-token"
+
 github:
   owner: "your-org"
   repo: "your-repo"
