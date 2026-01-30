@@ -42,28 +42,28 @@ npx auto-fix-workflow init
 
 ### MCP 서버로 사용
 
-Claude Desktop 또는 MCP 클라이언트 설정에 추가:
+`npx auto-fix-workflow init` 실행 후 다음 파일들이 생성됩니다:
 
+**.mcp.json** (MCP 서버 설정 - 커밋 가능):
 ```json
 {
   "mcpServers": {
     "auto-fix-workflow": {
       "command": "npx",
       "args": ["auto-fix-workflow"],
-      "env": {
-        "GITHUB_TOKEN": "your-github-token",
-        "ASANA_TOKEN": "your-asana-token"
-      }
+      "env": {}
     }
   }
 }
 ```
 
-### 설정
-
-프로젝트 루트에 `.auto-fix.yaml` 생성:
-
+**.auto-fix.yaml** (워크플로우 설정 + 토큰 - gitignore됨):
 ```yaml
+# 인증 토큰 (이 파일은 .gitignore에 추가됨)
+tokens:
+  github: "your-github-token"
+  asana: "your-asana-token"
+
 github:
   owner: your-org
   repo: your-repo

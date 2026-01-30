@@ -42,28 +42,28 @@ For detailed setup instructions, see [Setup Guide](./docs/SETUP.md).
 
 ### As MCP Server
 
-Add to your Claude Desktop or MCP client configuration:
+After running `npx auto-fix-workflow init`, the following files are created:
 
+**.mcp.json** (MCP server configuration - can be committed):
 ```json
 {
   "mcpServers": {
     "auto-fix-workflow": {
       "command": "npx",
       "args": ["auto-fix-workflow"],
-      "env": {
-        "GITHUB_TOKEN": "your-github-token",
-        "ASANA_TOKEN": "your-asana-token"
-      }
+      "env": {}
     }
   }
 }
 ```
 
-### Configuration
-
-Create `.auto-fix.yaml` in your project root:
-
+**.auto-fix.yaml** (workflow settings + tokens - gitignored):
 ```yaml
+# Tokens (this file is added to .gitignore)
+tokens:
+  github: "your-github-token"
+  asana: "your-asana-token"
+
 github:
   owner: your-org
   repo: your-repo
