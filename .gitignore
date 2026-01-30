@@ -40,6 +40,5 @@ pnpm-debug.log*
 # Local AI/development configuration
 .claude/
 .omc/
-.sdd/
 .sisyphus/
 .gitmessage

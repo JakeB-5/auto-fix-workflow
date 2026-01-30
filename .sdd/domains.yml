@@ -1,0 +1,111 @@
+# Auto-Fix Workflow 도메인 정의
+# version: 1.1.0
+# created: 2026-01-30
+# updated: 2026-01-30
+
+domains:
+  # === Phase 1: MVP (Core + GitHub) ===
+  common:
+    description: 공유 타입, 설정 로딩, 유틸리티
+    phase: 1
+    priority: 1
+    dependencies: []
+    includes:
+      - types (Issue, Config, Result)
+      - config-loader
+      - issue-parser
+      - error-handler
+      - logger
+
+  github:
+    description: GitHub Issue 및 Pull Request 관리
+    phase: 1
+    priority: 2
+    dependencies: [common]
+    tools:
+      - list_issues
+      - get_issue
+      - create_issue
+      - update_issue
+      - create_pr
+    service: GitHubService (@octokit/rest)
+
+  # === Phase 1.5: Triage (Asana + Analyzer) ===
+  analyzer:
+    description: 태스크 분석 및 코드 위치 탐색
+    phase: 1.5
+    priority: 3
+    dependencies: [common]
+    includes:
+      - task-analyzer (Asana 태스크 분석)
+      - code-locator (관련 코드 탐색)
+      - issue-generator (GitHub Issue 템플릿 생성)
+
+  asana:
+    description: Asana 태스크 관리 및 분석
+    phase: 1.5
+    priority: 4
+    dependencies: [common, analyzer]
+    tools:
+      - list_asana_tasks
+      - get_asana_task
+      - update_asana_task
+      - analyze_asana_task
+    service: AsanaService (Asana API)
+
+  # === Phase 2: Worktree & Parallel Processing ===
+  git:
+    description: Git Worktree 및 브랜치 관리
+    phase: 2
+    priority: 5
+    dependencies: [common]
+    tools:
+      - manage_worktree
+    service: GitService (simple-git)
+
+  # === Phase 3: Quality Gate ===
+  checks:
+    description: 로컬 CI 체크 실행 (테스트, 타입체크, 린트)
+    phase: 3
+    priority: 6
+    dependencies: [common, git]
+    tools:
+      - run_checks
+    service: ChecksService (child_process)
+
+  # === Phase 2: Workflow Orchestration ===
+  workflow:
+    description: 이슈 그룹핑 및 워크플로우 오케스트레이션
+    phase: 2
+    priority: 7
+    dependencies: [common, github, git, checks]
+    tools:
+      - group_issues
+    includes:
+      - grouping (컴포넌트/파일 기반 그룹핑)
+      - code-fix-strategy (코드 수정 가이드라인)
+
+  # === Slash Commands ===
+  commands:
+    description: 슬래시 커맨드 정의 (/triage, /autofix)
+    phase: 2
+    priority: 8
+    dependencies: [common, github, asana, git, checks, workflow]
+    includes:
+      - triage (Asana → GitHub Issue 변환)
+      - autofix (GitHub Issue 자동 수정)
+
+# 구현 순서 (Phase + Priority 기준)
+# Phase 1 (MVP):
+#   1. common     - 모든 도메인의 기반
+#   2. github     - Issue/PR 관리
+# Phase 1.5 (Triage):
+#   3. analyzer   - 태스크 분석 (asana 의존성)
+#   4. asana      - Asana 연동
+# Phase 2 (Worktree):
+#   5. git        - Worktree 관리
+# Phase 3 (Quality):
+#   6. checks     - 품질 게이트
+# Phase 2 (Orchestration):
+#   7. workflow   - 그룹핑 & 오케스트레이션
+#   8. commands   - 슬래시 커맨드
