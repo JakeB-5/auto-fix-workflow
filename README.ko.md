@@ -148,6 +148,36 @@ npx auto-fix-workflow autofix --issues 1,2,3
 | `AUTO_FIX_CONFIG` | 커스텀 설정 파일 경로 | 아니오 |
 | `LOG_LEVEL` | 로깅 레벨 (debug/info/warn/error) | 아니오 |
 
+## API 토큰 권한
+
+### GitHub 토큰
+
+다음 권한으로 [Personal Access Token](https://github.com/settings/tokens) 생성:
+
+| 권한 | 필수 | 설명 |
+|------|------|------|
+| `repo` | 예 | 비공개 저장소 전체 제어 |
+| `public_repo` | 예 (공개 저장소) | 공개 저장소 접근 |
+| `read:org` | 선택 | 조직 멤버십 읽기 (조직 저장소용) |
+
+Fine-grained 토큰 권장 설정:
+- **저장소 접근**: 특정 저장소 선택
+- **권한**:
+  - Issues: 읽기 및 쓰기
+  - Pull requests: 읽기 및 쓰기
+  - Contents: 읽기 및 쓰기
+  - Metadata: 읽기 전용
+
+### Asana 토큰
+
+Asana 개발자 콘솔에서 [Personal Access Token](https://app.asana.com/0/developer-console) 생성:
+
+| 권한 | 설명 |
+|------|------|
+| 태스크 읽기 | 태스크 상세 조회 및 목록 조회 |
+| 태스크 쓰기 | 태스크 상태 업데이트, 댓글 추가 |
+| 프로젝트 읽기 | 프로젝트 정보 접근 |
+
 ## 개발
 
 ```bash

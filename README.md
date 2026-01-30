@@ -1,5 +1,7 @@
 # auto-fix-workflow
 
+English | [한국어](./README.ko.md)
+
 MCP (Model Context Protocol) server for automated GitHub issue management and code fixing workflows.
 
 ## Features
@@ -145,6 +147,36 @@ Options:
 | `ASANA_TOKEN` | Asana personal access token | For Asana features |
 | `AUTO_FIX_CONFIG` | Custom config file path | No |
 | `LOG_LEVEL` | Logging level (debug/info/warn/error) | No |
+
+## API Token Scopes
+
+### GitHub Token
+
+Create a [Personal Access Token](https://github.com/settings/tokens) with the following scopes:
+
+| Scope | Required | Description |
+|-------|----------|-------------|
+| `repo` | Yes | Full control of private repositories |
+| `public_repo` | Yes (for public repos) | Access public repositories |
+| `read:org` | Optional | Read org membership (for org repos) |
+
+For fine-grained tokens (recommended):
+- **Repository access**: Select specific repositories
+- **Permissions**:
+  - Issues: Read and write
+  - Pull requests: Read and write
+  - Contents: Read and write
+  - Metadata: Read-only
+
+### Asana Token
+
+Create a [Personal Access Token](https://app.asana.com/0/developer-console) in Asana Developer Console:
+
+| Permission | Description |
+|------------|-------------|
+| Read tasks | View task details and list tasks |
+| Write tasks | Update task status, add comments |
+| Read projects | Access project information |
 
 ## Development
 
