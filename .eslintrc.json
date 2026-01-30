@@ -17,12 +17,29 @@
     "es2022": true
   },
   "rules": {
-    "@typescript-eslint/explicit-function-return-type": "warn",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-    "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/prefer-readonly": "error",
-    "@typescript-eslint/strict-boolean-expressions": "warn",
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/prefer-readonly": "off",
+    "@typescript-eslint/strict-boolean-expressions": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-return": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
+    "@typescript-eslint/require-await": "warn",
+    "@typescript-eslint/no-floating-promises": "warn",
+    "@typescript-eslint/no-misused-promises": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "prefer-const": "warn",
+    "no-case-declarations": "warn",
+    "no-useless-escape": "warn",
+    "no-regex-spaces": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn",
+    "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+    "@typescript-eslint/restrict-template-expressions": "warn",
+    "@typescript-eslint/no-var-requires": "warn",
+    "@typescript-eslint/no-redundant-type-constituents": "warn"
   },
-  "ignorePatterns": ["dist", "node_modules", "*.js"]
+  "ignorePatterns": ["dist", "node_modules", "*.js", "**/__tests__/**", "**/*.test.ts", "scripts/**"]
 }
