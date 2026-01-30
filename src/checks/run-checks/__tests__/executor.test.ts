@@ -9,10 +9,11 @@ import { executeCommand } from '../executor.js';
 
 describe('executeCommand', () => {
   it('should execute successful command', async () => {
+    // Use node for cross-platform reliability
     const cmd: CheckCommand = {
       check: 'lint',
-      command: process.platform === 'win32' ? 'cmd' : 'echo',
-      args: process.platform === 'win32' ? ['/c', 'echo', 'test'] : ['test'],
+      command: 'node',
+      args: ['-e', 'console.log("test")'],
       timeoutMs: 5000,
       cwd: process.cwd(),
     };
@@ -27,10 +28,11 @@ describe('executeCommand', () => {
   });
 
   it('should handle failing command', async () => {
+    // Use node for cross-platform reliability
     const cmd: CheckCommand = {
       check: 'test',
-      command: process.platform === 'win32' ? 'cmd' : 'sh',
-      args: process.platform === 'win32' ? ['/c', 'exit', '1'] : ['-c', 'exit 1'],
+      command: 'node',
+      args: ['-e', 'process.exit(1)'],
       timeoutMs: 5000,
       cwd: process.cwd(),
     };
@@ -65,10 +67,11 @@ describe('executeCommand', () => {
   });
 
   it('should collect stdout output', async () => {
+    // Use node for cross-platform reliability
     const cmd: CheckCommand = {
       check: 'lint',
-      command: process.platform === 'win32' ? 'cmd' : 'echo',
-      args: process.platform === 'win32' ? ['/c', 'echo', 'Hello World'] : ['Hello World'],
+      command: 'node',
+      args: ['-e', 'console.log("Hello World")'],
       timeoutMs: 5000,
       cwd: process.cwd(),
     };
@@ -80,12 +83,11 @@ describe('executeCommand', () => {
   });
 
   it('should collect stderr output', async () => {
+    // Use node for cross-platform reliability
     const cmd: CheckCommand = {
       check: 'test',
-      command: process.platform === 'win32' ? 'cmd' : 'sh',
-      args: process.platform === 'win32'
-        ? ['/c', 'echo Error message 1>&2']
-        : ['-c', 'echo "Error message" >&2'],
+      command: 'node',
+      args: ['-e', 'console.error("Error message")'],
       timeoutMs: 5000,
       cwd: process.cwd(),
     };
