@@ -7,9 +7,11 @@ feature: init
 depends: "common/config-loader"
 ---
 
-# /init Command Specification
+# init CLI Command Specification
 
 > 프로젝트 초기 설정을 자동화하는 CLI 명령어. MCP 설정과 config 파일을 생성한다.
+>
+> **실행 방식:** `npx auto-fix-workflow init` (CLI 명령어, 에이전트 프롬프트 아님)
 
 ---
 
@@ -19,7 +21,7 @@ depends: "common/config-loader"
 
 ### Scenario: GitHub 토큰 입력
 
-- **GIVEN** 사용자가 `/init` 명령을 실행함
+- **GIVEN** 사용자가 `npx auto-fix-workflow init` 명령을 터미널에서 실행함
 - **WHEN** GitHub 토큰 입력 프롬프트가 표시될 때
 - **THEN** 사용자가 입력한 토큰이 검증되어야 함
 - **AND** 유효한 토큰이면 `.mcp.json`에 저장되어야 함
@@ -206,18 +208,21 @@ depends: "common/config-loader"
 
 ## Requirement: REQ-006 - CLI 인터페이스
 
-시스템은 대화형 CLI 인터페이스를 제공해야 한다(SHALL).
+시스템은 터미널에서 실행되는 대화형 CLI 명령어를 제공해야 한다(SHALL).
 
 ### Scenario: 명령어 실행
 
-- **GIVEN** 사용자가 CLI를 사용함
+- **GIVEN** 사용자가 터미널(bash, zsh, PowerShell 등)을 사용함
 - **WHEN** init 명령을 실행할 때
 - **THEN** 다음 형식으로 실행할 수 있어야 함
   ```bash
+  # npm 설치 후
   npx auto-fix-workflow init
-  # 또는
+
+  # 또는 글로벌 설치 후
   auto-fix-workflow init
   ```
+- **AND** 대화형 프롬프트가 터미널에 표시되어야 함
 
 ### Scenario: 비대화형 모드
 
