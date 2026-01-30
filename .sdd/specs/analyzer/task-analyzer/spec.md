@@ -96,7 +96,7 @@ depends: "common/types"
   ```typescript
   {
     task_id: string;
-    confidence: "high" | "medium" | "low";
+    confidence: number;  // 0.0 ~ 1.0 (high: >= 0.7, medium: 0.4-0.7, low: < 0.4)
     can_auto_convert: boolean;
     reproducibility: "clear" | "partial" | "unclear";
     has_sufficient_info: boolean;

@@ -67,22 +67,22 @@ This specification follows:
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `--task` | string | NO | - | Specific Asana task ID (e.g., `--task 12345`) |
-| `--all` | boolean | NO | false | Process all pending tasks in the "To Triage" section |
-| `--dry-run` | boolean | NO | false | Analysis only, no GitHub Issue creation |
+| `--mode` | string | NO | `interactive` | Processing mode: `single`, `batch`, or `interactive` |
 | `--project` | string | NO | config | Asana project ID (overrides config file) |
+| `--dry-run` | boolean | NO | false | Analysis only, no GitHub Issue creation |
+| `--limit` | number | NO | 50 | Maximum number of tasks to process |
 
 ### 2.3 Parameter Rules
 
 **RFC 2119 Requirements:**
 
 - The command MUST accept zero or more parameters
-- If `--task` is provided, the command MUST process only that specific task
-- If `--all` is provided, the command MUST process all eligible tasks
-- If both `--task` and `--all` are provided, the command MUST return an error
-- If neither is provided, the command MUST prompt the user to select tasks
+- If `--mode single` is provided with `--project`, the command MUST process only that specific project's tasks
+- If `--mode batch` is provided, the command MUST process all eligible tasks up to `--limit`
+- If `--mode interactive` or no mode is provided, the command MUST prompt the user to select tasks
 - The `--dry-run` flag MUST prevent any write operations to GitHub or Asana
 - The `--project` parameter MUST override the project ID from the config file
+- The `--limit` parameter MUST cap the number of tasks processed
 
 ### 2.4 Examples
 
@@ -90,17 +90,17 @@ This specification follows:
 # Interactive mode - shows list and asks user to select
 /triage
 
-# Process specific task
-/triage --task 1234567890
+# Process tasks in batch mode
+/triage --mode batch
 
-# Process all pending tasks
-/triage --all
+# Process tasks from specific project
+/triage --mode batch --project 9876543210
 
-# Dry-run analysis for specific task
-/triage --task 1234567890 --dry-run
+# Dry-run analysis
+/triage --mode batch --dry-run
 
-# Use different project
-/triage --all --project 9876543210
+# Limit number of tasks
+/triage --mode batch --limit 10
 
 # Dry-run all tasks
 /triage --all --dry-run
