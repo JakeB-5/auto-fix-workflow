@@ -35,5 +35,4 @@ jobs:
         run: npm install -g sdd-tool
 
       - name: Validate specifications
-        run: sdd validate --no-constitution
-        continue-on-error: true  # Constitution checks have false positives
+        run: sdd validate
