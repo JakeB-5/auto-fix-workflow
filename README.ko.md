@@ -377,6 +377,10 @@ src/
 └── index.ts          # MCP 서버 진입점
 ```
 
+## 문서
+
+- **[초기 설정 가이드](./docs/SETUP.ko.md)** - GitHub, Asana, Sentry 연동을 위한 초기 설정
+
 ## 라이선스
 
 MIT

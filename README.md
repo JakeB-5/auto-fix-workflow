@@ -377,6 +377,10 @@ src/
 └── index.ts          # MCP server entry point
 ```
 
+## Documentation
+
+- **[Setup Guide](./docs/SETUP.md)** - Initial setup for GitHub, Asana, and Sentry integration
+
 ## License
 
 MIT
