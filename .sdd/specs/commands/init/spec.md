@@ -15,23 +15,23 @@ depends: "common/config-loader"
 
 ---
 
-## Requirement: REQ-001 - MCP 설정 파일 생성
+## Requirement: REQ-001 - 토큰 입력 및 저장
 
-시스템은 사용자로부터 토큰을 입력받아 MCP 설정 파일을 생성해야 한다(SHALL).
+시스템은 사용자로부터 토큰을 입력받아 설정 파일에 저장해야 한다(SHALL).
 
 ### Scenario: GitHub 토큰 입력
 
 - **GIVEN** 사용자가 `npx auto-fix-workflow init` 명령을 터미널에서 실행함
 - **WHEN** GitHub 토큰 입력 프롬프트가 표시될 때
 - **THEN** 사용자가 입력한 토큰이 검증되어야 함
-- **AND** 유효한 토큰이면 `.mcp.json`에 저장되어야 함
+- **AND** 유효한 토큰이면 `.auto-fix.yaml`에 저장되어야 함
 
 ### Scenario: Asana 토큰 입력
 
 - **GIVEN** GitHub 토큰 입력이 완료됨
 - **WHEN** Asana 토큰 입력 프롬프트가 표시될 때
 - **THEN** 사용자가 입력한 토큰이 검증되어야 함
-- **AND** 유효한 토큰이면 `.mcp.json`에 저장되어야 함
+- **AND** 유효한 토큰이면 `.auto-fix.yaml`에 저장되어야 함
 
 ### Scenario: 토큰 입력 건너뛰기
 
@@ -44,12 +44,12 @@ depends: "common/config-loader"
 
 ## Requirement: REQ-002 - .mcp.json 파일 생성
 
-시스템은 MCP 서버 설정 파일을 생성해야 한다(SHALL).
+시스템은 MCP 서버 설정 파일을 생성해야 한다(SHALL). 토큰은 보안상 .mcp.json에 직접 저장하지 않는다.
 
 ### Scenario: .mcp.json 생성
 
-- **GIVEN** 토큰 입력이 완료됨
-- **WHEN** 설정 파일을 생성할 때
+- **GIVEN** init 명령이 실행됨
+- **WHEN** MCP 설정 파일을 생성할 때
 - **THEN** 다음 구조의 `.mcp.json` 파일이 생성되어야 함
   ```json
   {
@@ -57,14 +57,12 @@ depends: "common/config-loader"
       "auto-fix-workflow": {
         "command": "npx",
         "args": ["auto-fix-workflow"],
-        "env": {
-          "GITHUB_TOKEN": "<입력받은 토큰>",
-          "ASANA_TOKEN": "<입력받은 토큰>"
-        }
+        "env": {}
       }
     }
   }
   ```
+- **AND** 토큰은 `.auto-fix.yaml`에서 읽어오므로 env는 비워둔다
 
 ### Scenario: 기존 .mcp.json이 있는 경우
 
@@ -85,6 +83,11 @@ depends: "common/config-loader"
 - **WHEN** `.auto-fix.yaml` 파일을 생성할 때
 - **THEN** 다음 구조의 설정 파일이 생성되어야 함
   ```yaml
+  # 인증 토큰 (이 파일은 .gitignore에 추가됨)
+  tokens:
+    github: "<입력받은 GitHub 토큰>"
+    asana: "<입력받은 Asana 토큰>"
+
   github:
     owner: "<TODO: GitHub 조직/사용자명>"
     repo: "<TODO: 저장소명>"
@@ -123,6 +126,15 @@ depends: "common/config-loader"
     basePath: ".worktrees"
     maxParallel: 3
   ```
+- **AND** 토큰이 입력되지 않은 경우 해당 필드는 빈 문자열로 설정
+
+### Scenario: .gitignore에 설정 파일 추가
+
+- **GIVEN** `.auto-fix.yaml` 파일이 생성됨
+- **WHEN** init 명령이 완료될 때
+- **THEN** `.gitignore` 파일에 `.auto-fix.yaml`이 추가되어야 함
+- **AND** 이미 추가되어 있으면 중복 추가하지 않음
+- **AND** `.gitignore` 파일이 없으면 새로 생성함
 
 ### Scenario: 기존 .auto-fix.yaml이 있는 경우
 
@@ -147,9 +159,14 @@ depends: "common/config-loader"
 ```
 ✅ auto-fix-workflow 초기 설정 완료!
 
-📁 생성된 파일:
+📁 생성/수정된 파일:
   - .mcp.json (MCP 서버 설정)
-  - .auto-fix.yaml (워크플로우 설정)
+  - .auto-fix.yaml (워크플로우 설정 + 토큰)
+  - .gitignore (.auto-fix.yaml 추가됨)
+
+🔒 보안:
+  - 토큰은 .auto-fix.yaml에 저장됨
+  - .auto-fix.yaml은 .gitignore에 추가되어 커밋되지 않음
 
 ⚠️  수동 설정이 필요한 항목:
 
@@ -260,6 +277,6 @@ auto-fix-workflow init [options]
 
 ## 비고
 
-- 토큰은 로컬 파일에만 저장되며 원격으로 전송되지 않음
-- `.mcp.json`은 `.gitignore`에 추가하는 것을 권장
+- 토큰은 `.auto-fix.yaml`에 저장되며 `.gitignore`에 자동 추가됨
+- `.mcp.json`에는 토큰이 저장되지 않음 (보안)
 - Sentry 설정은 선택사항으로 향후 추가 가능

@@ -19,8 +19,10 @@ src/commands/init/
 ├── prompts.ts         # 대화형 프롬프트
 ├── validators.ts      # 토큰 검증 로직
 ├── generators/
-│   ├── mcp-config.ts  # .mcp.json 생성
-│   └── yaml-config.ts # .auto-fix.yaml 생성
+│   ├── index.ts       # 생성기 통합
+│   ├── mcp-config.ts  # .mcp.json 생성 (토큰 없이)
+│   ├── yaml-config.ts # .auto-fix.yaml 생성 (토큰 포함)
+│   └── gitignore.ts   # .gitignore 업데이트
 ├── output.ts          # 결과 출력 포맷팅
 └── __tests__/
     ├── cli.test.ts
@@ -51,9 +53,10 @@ src/commands/init/
 3. 확인 프롬프트 (Y/N)
 
 ### Phase 3: 설정 파일 생성
-1. `.mcp.json` 생성/업데이트
-2. `.auto-fix.yaml` 템플릿 생성
-3. 기존 파일 병합 로직
+1. `.mcp.json` 생성/업데이트 (env 비워둠)
+2. `.auto-fix.yaml` 템플릿 생성 (tokens 섹션 포함)
+3. `.gitignore`에 `.auto-fix.yaml` 추가
+4. 기존 파일 병합 로직
 
 ### Phase 4: 토큰 검증
 1. GitHub 토큰 검증 (GET /user)
@@ -68,8 +71,19 @@ src/commands/init/
 ## 5. Key Decisions
 
 ### 토큰 저장 위치
-- **선택**: `.mcp.json`의 env 필드에 저장
-- **이유**: MCP 표준 형식 준수, Claude Desktop과 호환
+- **선택**: `.auto-fix.yaml`의 tokens 섹션에 저장
+- **이유**:
+  - `.mcp.json`은 버전 관리될 수 있어 보안 위험
+  - `.auto-fix.yaml`은 자동으로 `.gitignore`에 추가됨
+  - 토큰과 설정을 한 파일에서 관리
+
+### .mcp.json 역할
+- **선택**: MCP 서버 등록만 담당 (env 비움)
+- **이유**: 토큰 없이도 MCP 서버 구조 공유 가능
+
+### .gitignore 자동 처리
+- **선택**: init 시 자동으로 `.auto-fix.yaml` 추가
+- **이유**: 사용자가 실수로 토큰을 커밋하는 것 방지
 
 ### 기존 파일 처리
 - **선택**: 병합 (mcpServers에 추가)
@@ -85,10 +99,12 @@ src/commands/init/
 - CLI 파서 테스트
 - 파일 생성 로직 테스트
 - 토큰 형식 검증 테스트
+- `.gitignore` 업데이트 테스트
 
 ### Integration Tests
 - 전체 flow 테스트 (mock API)
 - 기존 파일 병합 테스트
+- `.gitignore` 중복 방지 테스트
 
 ### Manual Tests
 - 실제 토큰으로 검증 테스트
