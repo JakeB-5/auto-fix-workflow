@@ -362,6 +362,20 @@ npm run type-check
 npm run lint
 ```
 
+### 스펙 주도 개발 (SDD)
+
+이 프로젝트는 스펙 관리를 위해 [sdd-tool](https://github.com/JakeB-5/sdd-tool)을 사용하여 개발되었습니다.
+
+```bash
+# 전체 스펙 검증
+npx sdd-tool validate
+
+# 스펙 목록 조회
+npx sdd-tool list
+```
+
+스펙 파일은 `.sdd/specs/` 디렉토리에 있습니다.
+
 ## 아키텍처
 
 ```

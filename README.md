@@ -362,6 +362,20 @@ npm run type-check
 npm run lint
 ```
 
+### Spec-Driven Development
+
+This project was developed using [sdd-tool](https://github.com/JakeB-5/sdd-tool) for spec management.
+
+```bash
+# Validate all specs
+npx sdd-tool validate
+
+# List specs
+npx sdd-tool list
+```
+
+Specs are located in `.sdd/specs/` directory.
+
 ## Architecture
 
 ```
