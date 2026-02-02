@@ -98,7 +98,8 @@ vi.mock('../ai-integration.js', () => ({
       data: {
         issues: [],
         filesToModify: [],
-        approach: 'test',
+        rootCause: 'test root cause',
+        suggestedFix: 'test fix',
         confidence: 0.9,
         complexity: 'low',
       },

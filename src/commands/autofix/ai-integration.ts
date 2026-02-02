@@ -1,12 +1,15 @@
 /**
  * @module commands/autofix/ai-integration
- * @description Claude AI analysis and fix integration (stub)
+ * @description Claude AI analysis and fix integration via Claude CLI
  */
 
+import { spawn } from 'child_process';
 import type { Issue, IssueGroup } from '../../common/types/index.js';
 import type { Result } from '../../common/types/result.js';
-import { ok, err } from '../../common/types/result.js';
+import { ok, err, isFailure } from '../../common/types/result.js';
 import type { AIAnalysisResult, AIFixResult } from './types.js';
+import { buildAnalysisPrompt, buildFixPrompt } from './prompts.js';
+import { createBudgetTrackerFromAI, type BudgetTracker } from './budget.js';
 
 /**
  * AI integration error
@@ -22,6 +25,11 @@ export type AIErrorCode =
   | 'FIX_FAILED'
   | 'CONTEXT_TOO_LARGE'
   | 'API_ERROR'
+  | 'CLI_NOT_FOUND'
+  | 'TIMEOUT'
+  | 'RATE_LIMIT'
+  | 'BUDGET_EXCEEDED'
+  | 'PARSE_ERROR'
   | 'NOT_IMPLEMENTED';
 
 /**
@@ -32,74 +40,410 @@ export interface AIConfig {
   readonly model?: string;
   readonly maxTokens?: number;
   readonly temperature?: number;
+  readonly maxBudgetPerIssue?: number;
+  readonly maxBudgetPerSession?: number;
+  readonly preferredModel?: 'opus' | 'sonnet' | 'haiku';
+  readonly fallbackModel?: 'opus' | 'sonnet' | 'haiku';
 }
 
 /**
- * AI Integration Service (Stub)
+ * Claude CLI invocation options
+ */
+export interface ClaudeOptions {
+  /** Prompt to send to Claude */
+  prompt: string;
+  /** Model to use */
+  model?: 'opus' | 'sonnet' | 'haiku';
+  /** Allowed tools */
+  allowedTools?: string[];
+  /** Maximum budget in USD */
+  maxBudget?: number;
+  /** Working directory */
+  workingDir?: string;
+  /** Timeout in milliseconds */
+  timeout?: number;
+}
+
+/**
+ * Claude CLI result
+ */
+export interface ClaudeResult {
+  /** Success flag */
+  success: boolean;
+  /** stdout output */
+  output: string;
+  /** Exit code */
+  exitCode: number;
+  /** Usage information if available */
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    cost: number;
+  };
+  /** stderr output */
+  error?: string;
+}
+
+/**
+ * Sleep utility for retry backoff
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Invoke Claude CLI as subprocess
+ */
+export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<ClaudeResult, AIError>> {
+  const {
+    prompt,
+    model = 'opus',
+    allowedTools = [],
+    maxBudget,
+    workingDir,
+    timeout = 120000, // 2 minutes default
+  } = options;
+
+  // Build command arguments
+  const args: string[] = [
+    '--dangerously-skip-permissions',
+    '--print',
+    '--output-format', 'json',
+  ];
+
+  if (model) {
+    args.push('--model', model);
+  }
+
+  if (allowedTools.length > 0) {
+    args.push('--allowedTools', ...allowedTools);
+  }
+
+  if (maxBudget !== undefined) {
+    args.push('--max-budget-usd', maxBudget.toString());
+  }
+
+  args.push(prompt);
+
+  return new Promise((resolve) => {
+    const claude = spawn('claude', args, {
+      cwd: workingDir || process.cwd(),
+      env: { ...process.env },
+      shell: true,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let timedOut = false;
+
+    // Setup timeout
+    const timeoutHandle = setTimeout(() => {
+      timedOut = true;
+      claude.kill('SIGTERM');
+    }, timeout);
+
+    claude.stdout?.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    claude.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    claude.on('close', (code) => {
+      clearTimeout(timeoutHandle);
+
+      if (timedOut) {
+        resolve(err({
+          code: 'TIMEOUT',
+          message: `Claude CLI timed out after ${timeout}ms`,
+        }));
+        return;
+      }
+
+      const exitCode = code ?? 1;
+      const result: ClaudeResult = {
+        success: exitCode === 0,
+        output: stdout,
+        exitCode,
+        error: stderr || undefined,
+      };
+
+      // Try to parse usage information from JSON output
+      try {
+        const jsonMatch = stdout.match(/\{[\s\S]*"usage"[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.usage) {
+            result.usage = {
+              inputTokens: parsed.usage.input_tokens ?? 0,
+              outputTokens: parsed.usage.output_tokens ?? 0,
+              cost: parsed.usage.cost_usd ?? 0,
+            };
+          }
+        }
+      } catch {
+        // Ignore parse errors for usage info
+      }
+
+      resolve(ok(result));
+    });
+
+    claude.on('error', (error) => {
+      clearTimeout(timeoutHandle);
+
+      // Check if command not found
+      if ('code' in error && error.code === 'ENOENT') {
+        resolve(err({
+          code: 'CLI_NOT_FOUND',
+          message: 'Claude CLI not found. Please install it first.',
+          cause: error,
+        }));
+        return;
+      }
+
+      resolve(err({
+        code: 'API_ERROR',
+        message: `Failed to spawn Claude CLI: ${error.message}`,
+        cause: error,
+      }));
+    });
+  });
+}
+
+/**
+ * Invoke Claude with retry logic
+ */
+async function safeInvokeClaude(
+  options: ClaudeOptions,
+  maxRetries = 3
+): Promise<Result<ClaudeResult, AIError>> {
+  let lastError: AIError | undefined;
+
+  for (let i = 0; i < maxRetries; i++) {
+    const result = await invokeClaudeCLI(options);
+
+    if (result.success) {
+      if (result.data.success) {
+        return result;
+      }
+
+      // Check for rate limit or overload
+      const errorMsg = result.data.error?.toLowerCase() || '';
+      if (errorMsg.includes('overloaded') || errorMsg.includes('rate') || errorMsg.includes('limit')) {
+        // Exponential backoff: 1s, 2s, 4s
+        await sleep(Math.pow(2, i) * 1000);
+        continue;
+      }
+
+      // Other failure, return immediately
+      return err({
+        code: 'API_ERROR',
+        message: result.data.error || 'Claude CLI failed',
+      });
+    } else if (isFailure(result)) {
+      // If we reach here, result.success is false
+      // Handle known error codes
+      if (result.error.code === 'CLI_NOT_FOUND') {
+        return result; // Don't retry if CLI not found
+      }
+
+      if (result.error.code === 'TIMEOUT') {
+        return result; // Don't retry on timeout
+      }
+
+      lastError = result.error;
+      await sleep(1000); // Brief pause before retry
+    }
+  }
+
+  return err(
+    lastError || {
+      code: 'API_ERROR',
+      message: 'Max retries exceeded',
+    }
+  );
+}
+
+/**
+ * AI Integration Service
  *
- * This is a stub implementation for Claude AI integration.
- * The actual implementation would use the Anthropic API or MCP to
- * have Claude analyze issues and generate fixes.
+ * Implements Claude CLI integration for issue analysis and fix generation.
  */
 export class AIIntegration {
   private readonly config: AIConfig;
+  private readonly budgetTracker: BudgetTracker;
 
   constructor(config: AIConfig = {}) {
     this.config = config;
+    this.budgetTracker = createBudgetTrackerFromAI(config);
   }
 
   /**
    * Analyze a group of issues
    *
-   * This would:
-   * 1. Read the relevant code files
-   * 2. Analyze the issues and code
-   * 3. Determine what changes are needed
-   * 4. Return an analysis result
+   * Uses Claude CLI to analyze issues and determine fix strategy.
+   * Limited to read-only tools: Read, Glob, Grep
    */
   async analyzeGroup(
     group: IssueGroup,
     worktreePath: string
   ): Promise<Result<AIAnalysisResult, AIError>> {
-    // STUB: In a real implementation, this would:
-    // 1. Gather context from the codebase
-    // 2. Send to Claude for analysis
-    // 3. Parse and return the analysis
+    const groupId = group.id;
 
-    return ok({
-      issues: group.issues,
-      filesToModify: group.relatedFiles.length > 0 ? [...group.relatedFiles] : ['src/index.ts'],
-      approach: `Stub analysis for ${group.issues.length} issue(s) in ${group.name}`,
-      confidence: 0.0, // Zero confidence since this is a stub
-      complexity: 'medium',
+    // Check budget
+    if (!this.budgetTracker.canSpend(groupId)) {
+      return err({
+        code: 'BUDGET_EXCEEDED',
+        message: `Budget exceeded for group ${groupId}`,
+      });
+    }
+
+    // Build analysis prompt
+    const prompt = buildAnalysisPrompt(group);
+
+    // Get model based on budget utilization
+    const model = this.budgetTracker.getCurrentModel();
+
+    // Invoke Claude CLI with analysis tools only
+    const result = await safeInvokeClaude({
+      prompt,
+      model,
+      allowedTools: ['Read', 'Glob', 'Grep'],
+      workingDir: worktreePath,
+      timeout: 300000, // 5 minutes for analysis
     });
+
+    if (isFailure(result)) {
+      return err(result.error);
+    }
+
+    const claudeResult = result.data;
+
+    // Track cost
+    if (claudeResult.usage) {
+      this.budgetTracker.addCost(groupId, claudeResult.usage.cost);
+    }
+
+    // Parse JSON response
+    try {
+      // Extract JSON from output
+      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"confidence"[\s\S]*?\}/);
+      if (!jsonMatch) {
+        return err({
+          code: 'PARSE_ERROR',
+          message: 'Could not find JSON in Claude output',
+        });
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]) as {
+        confidence: number;
+        rootCause: string;
+        suggestedFix: string;
+        affectedFiles: string[];
+        complexity: 'low' | 'medium' | 'high';
+      };
+
+      return ok({
+        issues: group.issues,
+        filesToModify: parsed.affectedFiles,
+        rootCause: parsed.rootCause,
+        suggestedFix: parsed.suggestedFix,
+        confidence: parsed.confidence,
+        complexity: parsed.complexity,
+      });
+    } catch (error) {
+      return err({
+        code: 'PARSE_ERROR',
+        message: `Failed to parse analysis result: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error instanceof Error ? error : undefined,
+      });
+    }
   }
 
   /**
    * Generate and apply fixes for analyzed issues
    *
-   * This would:
-   * 1. Generate code changes based on analysis
-   * 2. Apply changes to the worktree
-   * 3. Create appropriate commit
-   * 4. Return fix result
+   * Uses Claude CLI to implement code changes based on analysis.
+   * Allows editing tools: Read, Edit, Glob, Grep, Bash
    */
   async applyFix(
     group: IssueGroup,
     analysis: AIAnalysisResult,
     worktreePath: string
   ): Promise<Result<AIFixResult, AIError>> {
-    // STUB: In a real implementation, this would:
-    // 1. Generate code changes using Claude
-    // 2. Apply changes to files
-    // 3. Stage and commit changes
+    const groupId = group.id;
 
-    return ok({
-      filesModified: [],
-      summary: `Stub fix for ${group.issues.length} issue(s)`,
-      success: false, // Stub always "fails" since no actual work is done
-      commitMessage: this.generateCommitMessage(group),
+    // Check budget
+    if (!this.budgetTracker.canSpend(groupId)) {
+      return err({
+        code: 'BUDGET_EXCEEDED',
+        message: `Budget exceeded for group ${groupId}`,
+      });
+    }
+
+    // Build fix prompt
+    const prompt = buildFixPrompt(group, analysis);
+
+    // Get model based on budget utilization
+    const model = this.budgetTracker.getCurrentModel();
+
+    // Invoke Claude CLI with edit tools
+    const result = await safeInvokeClaude({
+      prompt,
+      model,
+      allowedTools: ['Read', 'Edit', 'Glob', 'Grep', 'Bash'],
+      workingDir: worktreePath,
+      timeout: 600000, // 10 minutes for fix
     });
+
+    if (isFailure(result)) {
+      return err(result.error);
+    }
+
+    const claudeResult = result.data;
+
+    // Track cost
+    if (claudeResult.usage) {
+      this.budgetTracker.addCost(groupId, claudeResult.usage.cost);
+    }
+
+    // Parse JSON response
+    try {
+      // Extract JSON from output
+      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"success"[\s\S]*?\}/);
+      if (!jsonMatch) {
+        return err({
+          code: 'PARSE_ERROR',
+          message: 'Could not find JSON in Claude output',
+        });
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]) as {
+        success: boolean;
+        summary: string;
+        filesChanged: string[];
+      };
+
+      // If successful, stage files
+      if (parsed.success && parsed.filesChanged.length > 0) {
+        // Files should already be staged by Claude using Bash tool
+        // But we can verify or re-stage if needed
+      }
+
+      return ok({
+        filesModified: parsed.filesChanged,
+        summary: parsed.summary,
+        success: parsed.success,
+        commitMessage: this.generateCommitMessage(group),
+      });
+    } catch (error) {
+      return err({
+        code: 'PARSE_ERROR',
+        message: `Failed to parse fix result: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error instanceof Error ? error : undefined,
+      });
+    }
   }
 
   /**
@@ -159,10 +503,33 @@ export class AIIntegration {
 
   /**
    * Validate that the AI can handle this group
+   *
+   * Checks:
+   * - Group has at least one issue
+   * - Budget is available for processing
+   * - Group complexity is not too high
    */
   canHandle(group: IssueGroup): boolean {
-    // Stub always returns false since it can't actually handle anything
-    return false;
+    // Must have at least one issue
+    if (group.issues.length === 0) {
+      return false;
+    }
+
+    // Check if budget allows processing
+    const groupId = group.id;
+    if (!this.budgetTracker.canSpend(groupId, 0.01)) {
+      // Minimal cost check
+      return false;
+    }
+
+    // For high complexity groups with many files, require more scrutiny
+    const complexity = this.estimateComplexity(group);
+    if (complexity === 'high' && group.relatedFiles.length > 10) {
+      // Too many files for automated fix
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -190,20 +557,8 @@ export function createAIIntegration(config?: AIConfig): AIIntegration {
 }
 
 /**
- * Placeholder for actual Claude API integration
- *
- * In a real implementation, this would be replaced with:
- * - Anthropic SDK calls
- * - MCP tool calls to Claude
- * - Or other AI integration mechanisms
+ * Get budget tracker for inspection
  */
-export async function invokeClaudeAPI(
-  prompt: string,
-  config: AIConfig
-): Promise<Result<string, AIError>> {
-  // This is where the actual Claude API call would go
-  return err({
-    code: 'NOT_IMPLEMENTED',
-    message: 'Claude API integration not yet implemented. This is a stub.',
-  });
+export function getBudgetTracker(integration: AIIntegration): BudgetTracker {
+  return (integration as any).budgetTracker;
 }

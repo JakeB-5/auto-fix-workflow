@@ -195,15 +195,17 @@ export interface PipelineError {
 }
 
 /**
- * AI analysis result (stub interface)
+ * AI analysis result
  */
 export interface AIAnalysisResult {
   /** Issues analyzed */
   readonly issues: readonly Issue[];
   /** Files identified for modification */
   readonly filesToModify: readonly string[];
-  /** Suggested approach */
-  readonly approach: string;
+  /** Root cause of the issue(s) */
+  readonly rootCause: string;
+  /** Suggested fix approach */
+  readonly suggestedFix: string;
   /** Confidence score (0-1) */
   readonly confidence: number;
   /** Estimated complexity */

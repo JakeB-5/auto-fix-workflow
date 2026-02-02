@@ -1,5 +1,5 @@
 ---
-status: draft
+status: implemented
 created: 2026-02-02
 constitution_version: "1.1.0"
 domain: autofix
