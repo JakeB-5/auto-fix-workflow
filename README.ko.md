@@ -27,14 +27,6 @@ init 명령어로 프로젝트를 설정합니다 (설치 불필요):
 npx auto-fix-workflow init
 ```
 
-### 선택: 로컬 설치
-
-로컬 설치를 원하는 경우:
-
-```bash
-npm install auto-fix-workflow
-```
-
 실행 결과:
 - `.mcp.json` 생성 (MCP 서버 설정)
 - `.auto-fix.yaml` 생성 (워크플로우 설정 + 토큰)

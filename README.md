@@ -27,14 +27,6 @@ Run the init command to configure your project (no installation required):
 npx auto-fix-workflow init
 ```
 
-### Optional: Local Installation
-
-If you prefer to install locally:
-
-```bash
-npm install auto-fix-workflow
-```
-
 This will:
 - Create `.mcp.json` with MCP server configuration
 - Create `.auto-fix.yaml` with workflow settings and tokens
