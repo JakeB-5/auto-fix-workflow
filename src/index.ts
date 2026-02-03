@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * @module auto-fix-workflow
  * @description Main entry point for the Auto-fix Workflow MCP Server
