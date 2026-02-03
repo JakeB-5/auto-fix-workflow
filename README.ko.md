@@ -1,5 +1,11 @@
 # auto-fix-workflow
 
+[![npm version](https://img.shields.io/npm/v/auto-fix-workflow)](https://www.npmjs.com/package/auto-fix-workflow)
+[![CI](https://github.com/JakeB-5/auto-fix-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/JakeB-5/auto-fix-workflow/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-blue)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 GitHub 이슈 관리 및 코드 수정 워크플로우 자동화를 위한 MCP (Model Context Protocol) 서버입니다.
 
 [English](./README.md) | 한국어

@@ -1,5 +1,11 @@
 # auto-fix-workflow
 
+[![npm version](https://img.shields.io/npm/v/auto-fix-workflow)](https://www.npmjs.com/package/auto-fix-workflow)
+[![CI](https://github.com/JakeB-5/auto-fix-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/JakeB-5/auto-fix-workflow/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-blue)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 English | [한국어](./README.ko.md)
 
 MCP (Model Context Protocol) server for automated GitHub issue management and code fixing workflows.
