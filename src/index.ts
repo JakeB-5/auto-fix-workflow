@@ -52,7 +52,37 @@ export async function createServer(): Promise<Server> {
 
   // Load configuration for Asana tools
   const configResult = await loadConfig();
-  const asanaConfig: AsanaConfig | undefined = isSuccess(configResult) ? configResult.data.asana : undefined;
+  let asanaConfig: AsanaConfig | undefined;
+  let configError: string | undefined;
+
+  if (isSuccess(configResult)) {
+    asanaConfig = configResult.data.asana;
+  } else {
+    // Store error for tool responses and log for debugging
+    configError = configResult.error.message;
+    console.error('[auto-fix-workflow] Config loading failed:', configError);
+    if (configResult.error.details) {
+      console.error('[auto-fix-workflow] Details:', JSON.stringify(configResult.error.details, null, 2));
+    }
+  }
+
+  // Helper function for Asana config error response
+  const asanaConfigErrorResponse = () => ({
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify({
+          success: false,
+          error: configError
+            ? `Config loading failed: ${configError}`
+            : 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
+          cwd: process.cwd(),
+          envVar: process.env['AUTO_FIX_CONFIG'] || '(not set)',
+        }, null, 2),
+      },
+    ],
+    isError: true,
+  });
 
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -226,18 +256,7 @@ Example usage:
         // Asana tools
         case 'asana_list_tasks': {
           if (!asanaConfig) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
-                  }),
-                },
-              ],
-              isError: true,
-            };
+            return asanaConfigErrorResponse();
           }
 
           const result = await executeListTasks(asanaConfig, args as any);
@@ -268,18 +287,7 @@ Example usage:
 
         case 'asana_get_task': {
           if (!asanaConfig) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
-                  }),
-                },
-              ],
-              isError: true,
-            };
+            return asanaConfigErrorResponse();
           }
 
           const result = await executeGetTask(asanaConfig, args as any);
@@ -310,18 +318,7 @@ Example usage:
 
         case 'asana_update_task': {
           if (!asanaConfig) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
-                  }),
-                },
-              ],
-              isError: true,
-            };
+            return asanaConfigErrorResponse();
           }
 
           const result = await executeUpdateTask(asanaConfig, args as any);
@@ -352,18 +349,7 @@ Example usage:
 
         case 'asana_analyze_task': {
           if (!asanaConfig) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
-                  }),
-                },
-              ],
-              isError: true,
-            };
+            return asanaConfigErrorResponse();
           }
 
           const result = await executeAnalyzeTask(asanaConfig, args as any);

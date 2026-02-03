@@ -64,6 +64,8 @@ export function validateConfig(
  * - tokens.github → github.token
  * - asana.workspaceId → asana.workspaceGid
  * - asana.projectId (string) → asana.projectGids (array)
+ * - worktree.basePath → worktree.baseDir
+ * - worktree.maxParallel → worktree.maxConcurrent
  */
 function normalizeConfig(data: Record<string, unknown>): Record<string, unknown> {
   const result = { ...data };
@@ -110,6 +112,26 @@ function normalizeConfig(data: Record<string, unknown>): Record<string, unknown>
     }
 
     result['asana'] = normalizedAsana;
+  }
+
+  // Normalize Worktree config field names
+  const worktree = result['worktree'] as Record<string, unknown> | undefined;
+  if (worktree) {
+    const normalizedWorktree = { ...worktree };
+
+    // basePath → baseDir
+    if (worktree['basePath'] && !worktree['baseDir']) {
+      normalizedWorktree['baseDir'] = worktree['basePath'];
+      delete normalizedWorktree['basePath'];
+    }
+
+    // maxParallel → maxConcurrent
+    if (worktree['maxParallel'] && !worktree['maxConcurrent']) {
+      normalizedWorktree['maxConcurrent'] = worktree['maxParallel'];
+      delete normalizedWorktree['maxParallel'];
+    }
+
+    result['worktree'] = normalizedWorktree;
   }
 
   return result;

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-02-03
+
+### Fixed
+
+- **Worktree Config Schema**: Normalize user-friendly field names to schema-expected names (#4)
+  - `worktree.basePath` → `worktree.baseDir`
+  - `worktree.maxParallel` → `worktree.maxConcurrent`
+
+### Improved
+
+- **Config Error Diagnostics**: Enhanced Asana tool error responses to include actual config loading error, current working directory, and AUTO_FIX_CONFIG env var status for better debugging
+
 ## [0.3.4] - 2026-02-03
 
 ### Fixed
