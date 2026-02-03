@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-02-03
+
 ### Fixed
 
 - **Asana Config Schema**: Normalize user-friendly field names to schema-expected names (#3)
