@@ -232,7 +232,7 @@ Example usage:
                   type: 'text',
                   text: JSON.stringify({
                     success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml',
+                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
                   }),
                 },
               ],
@@ -274,7 +274,7 @@ Example usage:
                   type: 'text',
                   text: JSON.stringify({
                     success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml',
+                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
                   }),
                 },
               ],
@@ -316,7 +316,7 @@ Example usage:
                   type: 'text',
                   text: JSON.stringify({
                     success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml',
+                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
                   }),
                 },
               ],
@@ -358,7 +358,7 @@ Example usage:
                   type: 'text',
                   text: JSON.stringify({
                     success: false,
-                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml',
+                    error: 'Asana configuration not found. Please configure Asana in .auto-fix.yaml or set AUTO_FIX_CONFIG environment variable.',
                   }),
                 },
               ],

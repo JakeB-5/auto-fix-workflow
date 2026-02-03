@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AUTO_FIX_CONFIG Environment Variable**: Support for specifying config file path via `AUTO_FIX_CONFIG` env var, solving MCP server cwd issues (#2)
+
+### Improved
+
+- **Error Messages**: Config not found errors now include current working directory and AUTO_FIX_CONFIG hint for easier debugging
+
 ## [0.3.2] - 2026-02-03
 
 ### Fixed

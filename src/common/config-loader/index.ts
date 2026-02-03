@@ -63,6 +63,7 @@ export {
   resolveConfigPath,
   getConfigDir,
   CONFIG_FILE_NAMES,
+  CONFIG_ENV_VAR,
   type FindConfigOptions,
 } from './path-finder.js';
 

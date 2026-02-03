@@ -44,11 +44,26 @@ export class ConfigError extends Error {
   /**
    * Create a "config not found" error
    */
-  static notFound(searchedPaths: string[]): ConfigError {
+  static notFound(searchedPaths: string[], cwd?: string, envVarPath?: string): ConfigError {
+    let message = 'Configuration file not found.\n';
+
+    if (cwd) {
+      message += `Current working directory: ${cwd}\n`;
+    }
+
+    if (envVarPath) {
+      message += `AUTO_FIX_CONFIG was set to: ${envVarPath} (file not found)\n`;
+    }
+
+    message += `Searched paths:\n${searchedPaths.map(p => `  - ${p}`).join('\n')}\n`;
+    message += '\nTo fix this, either:\n';
+    message += '  1. Create .auto-fix.yaml in your project root\n';
+    message += '  2. Set AUTO_FIX_CONFIG environment variable to the config file path';
+
     return new ConfigError(
       'CONFIG_NOT_FOUND',
-      `Configuration file not found. Searched paths: ${searchedPaths.join(', ')}`,
-      { details: { searchedPaths } }
+      message,
+      { details: { searchedPaths, cwd, envVarPath } }
     );
   }
 

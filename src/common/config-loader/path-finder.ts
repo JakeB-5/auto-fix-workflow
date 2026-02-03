@@ -10,6 +10,11 @@ import { ok, err } from '../types/index.js';
 import { ConfigError } from './errors.js';
 
 /**
+ * Environment variable name for explicit config path
+ */
+export const CONFIG_ENV_VAR = 'AUTO_FIX_CONFIG';
+
+/**
  * Default configuration file names (in priority order)
  */
 export const CONFIG_FILE_NAMES = [
@@ -31,10 +36,15 @@ export interface FindConfigOptions {
   readonly maxDepth?: number;
   /** Custom config file names to search for */
   readonly fileNames?: readonly string[];
+  /** Whether to check AUTO_FIX_CONFIG env var (defaults to true) */
+  readonly checkEnvVar?: boolean;
 }
 
 /**
  * Find configuration file in directory hierarchy
+ *
+ * Checks AUTO_FIX_CONFIG environment variable first, then searches
+ * for config files in the directory hierarchy.
  *
  * @param options - Search options
  * @returns Result containing absolute path to config file or ConfigError
@@ -47,7 +57,28 @@ export function findConfigFile(
     searchParents = true,
     maxDepth = 10,
     fileNames = CONFIG_FILE_NAMES,
+    checkEnvVar = true,
   } = options;
+
+  // Check AUTO_FIX_CONFIG environment variable first
+  if (checkEnvVar) {
+    const envConfigPath = process.env[CONFIG_ENV_VAR];
+    if (envConfigPath) {
+      const resolvedEnvPath = path.resolve(envConfigPath);
+      if (fs.existsSync(resolvedEnvPath)) {
+        try {
+          const stat = fs.statSync(resolvedEnvPath);
+          if (stat.isFile()) {
+            return ok(resolvedEnvPath);
+          }
+        } catch {
+          // Fall through to normal search
+        }
+      }
+      // If env var is set but file doesn't exist, report it
+      return err(ConfigError.notFound([resolvedEnvPath], process.cwd(), envConfigPath));
+    }
+  }
 
   const searchedPaths: string[] = [];
   let currentDir = path.resolve(startDir);
@@ -88,7 +119,7 @@ export function findConfigFile(
     depth++;
   }
 
-  return err(ConfigError.notFound(searchedPaths));
+  return err(ConfigError.notFound(searchedPaths, process.cwd()));
 }
 
 /**
