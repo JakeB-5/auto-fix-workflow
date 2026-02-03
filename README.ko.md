@@ -31,6 +31,9 @@ npx auto-fix-workflow init
 - `.mcp.json` 생성 (MCP 서버 설정)
 - `.auto-fix.yaml` 생성 (워크플로우 설정 + 토큰)
 - `.gitignore`에 `.auto-fix.yaml` 추가 (보안)
+- `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` 생성 (표준화된 이슈 양식)
+- `.github/PULL_REQUEST_TEMPLATE.md` 생성 (PR 표준화)
+- `autofixing` 브랜치 생성 및 origin에 푸시
 
 옵션:
 - `--non-interactive`: GITHUB_TOKEN, ASANA_TOKEN 환경변수에서 토큰 읽기

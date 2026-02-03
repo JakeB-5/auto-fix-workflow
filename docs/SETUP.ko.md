@@ -18,12 +18,14 @@ npx auto-fix-workflow init
 3. 토큰 유효성 검증
 4. `.mcp.json` 및 `.auto-fix.yaml` 생성
 5. `.gitignore`에 `.auto-fix.yaml` 추가
+6. `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` 생성
+7. `.github/pull_request_template.md` 생성
+8. `autofixing` 브랜치 생성 및 푸시
 
 init 실행 후 수동으로 설정해야 할 사항:
 - `.auto-fix.yaml`에서 GitHub owner와 repo 설정
 - `.auto-fix.yaml`에서 Asana workspaceId와 projectId 설정
 - GitHub 라벨 생성 (아래 참조)
-- autofixing 브랜치 생성
 
 비대화형 설정 (CI/CD용):
 ```bash
@@ -79,7 +81,9 @@ GitHub 레포지토리에서 다음 라벨을 생성하세요:
 
 ### 3. Issue 템플릿 설정
 
-`.github/ISSUE_TEMPLATE/auto-fix-issue.yml` 파일 생성:
+✅ **`npx auto-fix-workflow init` 실행 시 자동 생성됨**
+
+init 명령어는 다음 구조로 `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` 파일을 생성합니다:
 
 ```yaml
 name: Auto-Fix Issue
@@ -148,8 +152,12 @@ body:
 
 ### 4. autofixing 브랜치 생성
 
+✅ **`npx auto-fix-workflow init` 실행 시 자동 생성됨**
+
+init 명령어는 `autofixing` 브랜치를 생성하고 원격 저장소에 푸시합니다.
+
+수동으로 생성해야 하는 경우:
 ```bash
-# 최초 1회 실행
 git checkout main
 git checkout -b autofixing
 git push -u origin autofixing
@@ -425,8 +433,9 @@ ai:
 | | Claude CLI 인증 | ☐ |
 | **GitHub** | PAT 발급 | ☐ |
 | | 라벨 생성 (7개 이상) | ☐ |
-| | Issue 템플릿 추가 | ☐ |
-| | autofixing 브랜치 생성 | ☐ |
+| | Issue 템플릿 추가 | ✅ (자동) |
+| | PR 템플릿 추가 | ✅ (자동) |
+| | autofixing 브랜치 생성 | ✅ (자동) |
 | | Branch Protection 설정 | ☐ |
 | **Asana** | PAT 발급 | ☐ |
 | | 프로젝트 ID 확인 | ☐ |

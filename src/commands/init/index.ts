@@ -47,6 +47,10 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
     writeYamlConfig,
     ensureAutoFixYamlIgnored,
     yamlConfigExists,
+    writeIssueTemplate,
+    writePRTemplate,
+    createAutofixBranch,
+    createGitHubLabels,
   } = await import('./generators/index.js');
   const { validateToken } = await import('./validators.js');
   const {
@@ -58,6 +62,10 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
   let mcpConfigCreated = false;
   let yamlConfigCreated = false;
   let gitignoreUpdated = false;
+  let issueTemplateCreated = false;
+  let prTemplateCreated = false;
+  let autofixBranchCreated = false;
+  let labelsResult: { created: string[]; existing: string[]; failed: string[] } | undefined;
   let githubToken: string | undefined;
   let asanaToken: string | undefined;
 
@@ -254,11 +262,56 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
   gitignoreUpdated = true;
   console.log('✓ .gitignore updated');
 
+  // Create GitHub templates
+  console.log('\n📝 Setting up GitHub templates...');
+
+  // Write Issue Template
+  const issueTemplateResult = await writeIssueTemplate(projectRoot);
+  if (isFailure(issueTemplateResult)) {
+    console.warn(`⚠️  Could not create issue template: ${issueTemplateResult.error.message}`);
+  } else {
+    issueTemplateCreated = true;
+    console.log('✓ .github/ISSUE_TEMPLATE/auto-fix-issue.yml created');
+  }
+
+  // Write PR Template
+  const prTemplateResult = await writePRTemplate(projectRoot);
+  if (isFailure(prTemplateResult)) {
+    console.warn(`⚠️  Could not create PR template: ${prTemplateResult.error.message}`);
+  } else {
+    prTemplateCreated = true;
+    console.log('✓ .github/PULL_REQUEST_TEMPLATE.md created');
+  }
+
+  // Create autofixing branch
+  console.log('\n📝 Setting up Git branch...');
+  const branchResult = await createAutofixBranch(projectRoot, true);
+  if (isFailure(branchResult)) {
+    console.warn(`⚠️  Could not create autofixing branch: ${branchResult.error.message}`);
+  } else if (branchResult.data.alreadyExists) {
+    console.log('✓ autofixing branch already exists');
+  } else {
+    autofixBranchCreated = true;
+    console.log(`✓ autofixing branch created${branchResult.data.pushed ? ' and pushed to origin' : ''}`);
+  }
+
+  // Create GitHub labels (only if we have a valid GitHub token and owner/repo info)
+  if (githubToken) {
+    console.log('\n📝 Setting up GitHub labels...');
+    // Note: For now, we skip label creation as it requires owner/repo info
+    // This can be added later when we prompt for owner/repo during init
+    console.log('ℹ️  GitHub labels: Run "npx auto-fix-workflow setup-labels" after configuring owner/repo in .auto-fix.yaml');
+  }
+
   // Print completion message
+  const filesCreated: string[] = [];
+  if (yamlConfigCreated) filesCreated.push('.auto-fix.yaml');
+  if (mcpConfigCreated) filesCreated.push('.mcp.json');
+  if (issueTemplateCreated) filesCreated.push('.github/ISSUE_TEMPLATE/auto-fix-issue.yml');
+  if (prTemplateCreated) filesCreated.push('.github/PULL_REQUEST_TEMPLATE.md');
+
   printCompletionMessage({
-    filesCreated: yamlConfigCreated
-      ? ['.auto-fix.yaml', '.mcp.json']
-      : ['.mcp.json'],
+    filesCreated,
     filesUpdated: gitignoreUpdated ? ['.gitignore'] : [],
     filesSkipped: [],
     tokensMissing: [
@@ -271,6 +324,10 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
     ],
   });
 
+  if (autofixBranchCreated) {
+    console.log('\n🌿 Git branch "autofixing" has been created.');
+  }
+
   return ok({
     mcpConfigCreated,
     yamlConfigCreated,
@@ -279,6 +336,14 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
       github: !!githubToken,
       asana: !!asanaToken,
     },
+    issueTemplateCreated,
+    prTemplateCreated,
+    autofixBranchCreated,
+    labelsResult: labelsResult ? {
+      created: labelsResult.created,
+      existing: labelsResult.existing,
+      failed: labelsResult.failed,
+    } : undefined,
   });
 }
 

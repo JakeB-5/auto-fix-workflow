@@ -18,12 +18,14 @@ This interactive command will:
 3. Validate the tokens
 4. Create `.mcp.json` and `.auto-fix.yaml`
 5. Add `.auto-fix.yaml` to `.gitignore`
+6. Create `.github/ISSUE_TEMPLATE/auto-fix-issue.yml`
+7. Create `.github/pull_request_template.md`
+8. Create and push `autofixing` branch
 
 After running init, you'll need to manually configure:
 - GitHub owner and repo in `.auto-fix.yaml`
 - Asana workspaceId and projectId in `.auto-fix.yaml`
 - Create GitHub labels (see below)
-- Create autofixing branch
 
 For non-interactive setup (CI/CD):
 ```bash
@@ -79,7 +81,9 @@ Create the following labels in your GitHub repository:
 
 ### 3. Issue Template Setup
 
-Create file at `.github/ISSUE_TEMPLATE/auto-fix-issue.yml`:
+✅ **Automatically created by `npx auto-fix-workflow init`**
+
+The init command creates `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` with the following structure:
 
 ```yaml
 name: Auto-Fix Issue
@@ -148,8 +152,12 @@ body:
 
 ### 4. Create autofixing Branch
 
+✅ **Automatically created by `npx auto-fix-workflow init`**
+
+The init command creates and pushes the `autofixing` branch to the remote repository.
+
+If you need to create it manually:
 ```bash
-# Run once
 git checkout main
 git checkout -b autofixing
 git push -u origin autofixing
@@ -425,8 +433,9 @@ ai:
 | | Claude CLI authenticated | ☐ |
 | **GitHub** | PAT issued | ☐ |
 | | Labels created (7+) | ☐ |
-| | Issue template added | ☐ |
-| | autofixing branch created | ☐ |
+| | Issue template added | ✅ (auto) |
+| | PR template added | ✅ (auto) |
+| | autofixing branch created | ✅ (auto) |
 | | Branch protection configured | ☐ |
 | **Asana** | PAT issued | ☐ |
 | | Project ID confirmed | ☐ |

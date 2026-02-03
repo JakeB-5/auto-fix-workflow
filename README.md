@@ -31,6 +31,9 @@ This will:
 - Create `.mcp.json` with MCP server configuration
 - Create `.auto-fix.yaml` with workflow settings and tokens
 - Add `.auto-fix.yaml` to `.gitignore` for security
+- Create `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` for standardized issue creation
+- Create `.github/PULL_REQUEST_TEMPLATE.md` for PR standardization
+- Create `autofixing` branch and push to origin
 
 Options:
 - `--non-interactive`: Read tokens from GITHUB_TOKEN and ASANA_TOKEN environment variables

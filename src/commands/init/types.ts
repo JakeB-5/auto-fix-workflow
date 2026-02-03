@@ -27,6 +27,26 @@ export interface InitResult {
   readonly gitignoreUpdated: boolean;
   /** Token configuration status */
   readonly tokensConfigured: TokenConfigStatus;
+  /** Whether issue template was created */
+  readonly issueTemplateCreated?: boolean;
+  /** Whether PR template was created */
+  readonly prTemplateCreated?: boolean;
+  /** Whether autofixing branch was created */
+  readonly autofixBranchCreated?: boolean;
+  /** GitHub labels creation result */
+  readonly labelsResult?: LabelsCreationStatus;
+}
+
+/**
+ * GitHub labels creation status
+ */
+export interface LabelsCreationStatus {
+  /** Labels that were created */
+  readonly created: readonly string[];
+  /** Labels that already existed */
+  readonly existing: readonly string[];
+  /** Labels that failed to create */
+  readonly failed: readonly string[];
 }
 
 /**

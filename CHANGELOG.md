@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ANALYSIS_PROMPT_TEMPLATE`, `FIX_PROMPT_TEMPLATE`, `RETRY_PROMPT_TEMPLATE`
   - `renderTemplate()` function with Handlebars-like syntax
   - JSON schemas for structured AI output validation
+- **Init Command Enhancements**
+  - Auto-generate GitHub Issue Template (`.github/ISSUE_TEMPLATE/auto-fix-issue.yml`)
+  - Auto-generate PR Template (`.github/PULL_REQUEST_TEMPLATE.md`)
+  - Auto-create `autofixing` branch with push to origin
+  - New generators: `issue-template.ts`, `pr-template.ts`, `github-labels.ts`, `branch.ts`
 - **Test Suites**
   - Comprehensive test coverage for AI integration modules (1,764 lines of tests)
   - Unit tests for budget tracking, prompt rendering, and CLI integration
