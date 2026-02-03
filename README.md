@@ -19,18 +19,20 @@ MCP (Model Context Protocol) server for automated GitHub issue management and co
 - **Workflow Orchestration**: Group issues, plan fix strategies, create PRs
 - **AI-Powered Analysis**: Claude CLI integration for automated code analysis and fix generation with budget tracking, intelligent model fallback (opus → sonnet → haiku), retry logic with exponential backoff, structured JSON schema validation, and tool-based security (read-only for analysis, edit-only for fixes)
 
-## Installation
+## Quick Start
 
-```bash
-npm install auto-fix-workflow
-```
-
-## Initial Setup
-
-Run the init command to configure the project:
+Run the init command to configure your project (no installation required):
 
 ```bash
 npx auto-fix-workflow init
+```
+
+### Optional: Local Installation
+
+If you prefer to install locally:
+
+```bash
+npm install auto-fix-workflow
 ```
 
 This will:

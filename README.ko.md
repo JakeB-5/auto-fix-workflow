@@ -19,18 +19,20 @@ GitHub 이슈 관리 및 코드 수정 워크플로우 자동화를 위한 MCP (
 - **워크플로우 오케스트레이션**: 이슈 그룹화, 수정 전략 계획, PR 생성
 - **AI 기반 분석**: Claude CLI 연동을 통한 자동 코드 분석 및 수정 생성, 이슈별/세션별 예산 추적, 지능형 모델 전환 (opus → sonnet → haiku), 지수 백오프 재시도 로직, JSON 스키마 검증, 도구 기반 보안 (분석 시 읽기 전용, 수정 시 편집 전용)
 
-## 설치
+## 빠른 시작
 
-```bash
-npm install auto-fix-workflow
-```
-
-## 초기 설정
-
-init 명령어로 프로젝트를 설정합니다:
+init 명령어로 프로젝트를 설정합니다 (설치 불필요):
 
 ```bash
 npx auto-fix-workflow init
+```
+
+### 선택: 로컬 설치
+
+로컬 설치를 원하는 경우:
+
+```bash
+npm install auto-fix-workflow
 ```
 
 실행 결과:
