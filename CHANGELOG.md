@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-02-03
+
+### Fixed
+
+- **Asana Error Message**: Corrected config filename from `.autofix-workflow.json` to `.auto-fix.yaml` in error messages (#1)
+
 ## [0.3.1] - 2026-02-03
 
 ### Fixed
