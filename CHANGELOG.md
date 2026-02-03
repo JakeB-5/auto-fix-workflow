@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-03
+
 ### Fixed
 
 - **CLI Entry Point**: Added shebang (`#!/usr/bin/env node`) to `src/index.ts` to fix `npx auto-fix-workflow init` not executing on Windows (file was opening in editor instead of running)
