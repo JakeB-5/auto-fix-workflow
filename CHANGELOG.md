@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Asana Config Schema**: Normalize user-friendly field names to schema-expected names (#3)
+  - `tokens.asana` → `asana.token`
+  - `asana.workspaceId` → `asana.workspaceGid`
+  - `asana.projectId` (string) → `asana.projectGids` (array)
+
 ## [0.3.3] - 2026-02-03
 
 ### Added

@@ -57,6 +57,65 @@ export function validateConfig(
 }
 
 /**
+ * Normalize user-friendly config field names to schema-expected names
+ *
+ * Transformations:
+ * - tokens.asana → asana.token
+ * - tokens.github → github.token
+ * - asana.workspaceId → asana.workspaceGid
+ * - asana.projectId (string) → asana.projectGids (array)
+ */
+function normalizeConfig(data: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...data };
+
+  // Handle tokens section - merge into respective configs
+  const tokens = data['tokens'] as Record<string, string> | undefined;
+  if (tokens) {
+    // Merge GitHub token
+    if (tokens['github']) {
+      const github = (result['github'] as Record<string, unknown>) ?? {};
+      if (!github['token']) {
+        result['github'] = { ...github, token: tokens['github'] };
+      }
+    }
+
+    // Merge Asana token
+    if (tokens['asana']) {
+      const asana = (result['asana'] as Record<string, unknown>) ?? {};
+      if (!asana['token']) {
+        result['asana'] = { ...asana, token: tokens['asana'] };
+      }
+    }
+
+    // Remove tokens section after merging
+    delete result['tokens'];
+  }
+
+  // Normalize Asana config field names
+  const asana = result['asana'] as Record<string, unknown> | undefined;
+  if (asana) {
+    const normalizedAsana = { ...asana };
+
+    // workspaceId → workspaceGid
+    if (asana['workspaceId'] && !asana['workspaceGid']) {
+      normalizedAsana['workspaceGid'] = asana['workspaceId'];
+      delete normalizedAsana['workspaceId'];
+    }
+
+    // projectId (string) → projectGids (array)
+    if (asana['projectId'] && !asana['projectGids']) {
+      const projectId = asana['projectId'] as string;
+      normalizedAsana['projectGids'] = [projectId];
+      delete normalizedAsana['projectId'];
+    }
+
+    result['asana'] = normalizedAsana;
+  }
+
+  return result;
+}
+
+/**
  * Apply defaults to optional configuration sections
  */
 function applyOptionalDefaults(data: unknown): unknown {
@@ -64,12 +123,13 @@ function applyOptionalDefaults(data: unknown): unknown {
     return data;
   }
 
-  const config = data as Record<string, unknown>;
+  // First normalize field names
+  const normalized = normalizeConfig(data as Record<string, unknown>);
 
   return {
-    ...config,
-    checks: applyChecksDefaults(config['checks'] as Record<string, unknown> | undefined),
-    logging: applyLoggingDefaults(config['logging'] as Record<string, unknown> | undefined),
+    ...normalized,
+    checks: applyChecksDefaults(normalized['checks'] as Record<string, unknown> | undefined),
+    logging: applyLoggingDefaults(normalized['logging'] as Record<string, unknown> | undefined),
   };
 }
 
