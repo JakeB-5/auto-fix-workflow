@@ -43,6 +43,16 @@ checks:
   retryCount: 3
   failFast: true
 
+# AI Configuration
+ai:
+  budgetPerIssue: 1.0           # Maximum USD per issue (default: 1.0)
+  budgetPerSession: 100.0       # Maximum USD per session (default: 100.0)
+  preferredModel: opus          # Primary model: opus | sonnet | haiku
+  fallbackModel: sonnet         # Fallback when budget tight
+  analysisTimeout: 300000       # 5 minutes for analysis
+  fixTimeout: 600000            # 10 minutes for fix operations
+  minConfidence: 0.5            # Minimum confidence to proceed (0.0-1.0)
+
 # Logging Configuration
 logging:
   level: info  # debug | info | warn | error
