@@ -85,6 +85,13 @@ checks:
 worktree:
   baseDir: .worktrees
   cleanupOnSuccess: true
+
+ai:
+  budgetPerIssue: 1.0           # Maximum USD per issue
+  budgetPerSession: 100.0       # Maximum USD per session
+  preferredModel: opus          # Primary model (opus|sonnet|haiku)
+  fallbackModel: sonnet         # Fallback when budget tight
+  minConfidence: 0.5            # Minimum confidence to proceed
 ```
 
 ## Available Tools

@@ -85,6 +85,13 @@ checks:
 worktree:
   baseDir: .worktrees
   cleanupOnSuccess: true
+
+ai:
+  budgetPerIssue: 1.0           # 이슈당 최대 비용 (USD)
+  budgetPerSession: 100.0       # 세션당 최대 비용 (USD)
+  preferredModel: opus          # 선호 모델 (opus|sonnet|haiku)
+  fallbackModel: sonnet         # 예산 부족 시 대체 모델
+  minConfidence: 0.5            # 수정 진행 최소 신뢰도
 ```
 
 ## 사용 가능한 도구
