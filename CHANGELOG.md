@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AI Integration Module** (`ai-integration.ts`)
+  - `invokeClaudeCLI()` function for spawning Claude CLI processes
+  - `safeInvokeClaude()` with exponential backoff retry logic for rate limits
+  - `analyzeGroup()` and `applyFix()` methods for issue processing
+  - 10 error codes for precise error handling (CLI_NOT_FOUND, TIMEOUT, RATE_LIMIT, BUDGET_EXCEEDED, etc.)
+- **Budget Tracking Module** (`budget.ts`)
+  - `BudgetTracker` class for cost management
+  - Per-issue and per-session cost tracking
+  - Dynamic model fallback based on budget utilization (<80% opus, 80-90% sonnet, >90% haiku)
+  - `canSpend()`, `addCost()`, `getCurrentModel()`, `resetIssue()` methods
+- **Prompt Templates Module** (`prompts.ts`)
+  - `ANALYSIS_PROMPT_TEMPLATE`, `FIX_PROMPT_TEMPLATE`, `RETRY_PROMPT_TEMPLATE`
+  - `renderTemplate()` function with Handlebars-like syntax
+  - JSON schemas for structured AI output validation
+- **Test Suites**
+  - Comprehensive test coverage for AI integration modules (1,764 lines of tests)
+  - Unit tests for budget tracking, prompt rendering, and CLI integration
+
+### Changed
+
+- **AIAnalysisResult Type** (Breaking Change)
+  - Replaced `approach` field with `rootCause` and `suggestedFix` for better structure
+- **AIIntegration.canHandle()**
+  - Now performs actual validation (budget + complexity + file count) instead of placeholder logic
+
+### Documentation
+
+- Added SDD specifications for ai-integration, budget, and prompts domains
+- Updated `domains.yml` with autofix domain definitions
+
 ## [0.2.0] - 2026-01-30
 
 ### Added

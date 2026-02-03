@@ -386,7 +386,34 @@ checks:
     - test
   timeout: 300000
   failFast: true
+
+ai:
+  budgetPerIssue: 1.0           # 이슈당 최대 비용 (USD, 기본값: 1.0)
+  budgetPerSession: 100.0       # 세션당 최대 비용 (USD, 기본값: 100.0)
+  preferredModel: "opus"        # 선호 모델 (opus|sonnet|haiku)
+  fallbackModel: "sonnet"       # 예산 부족 시 대체 모델
+  analysisTimeout: 300000       # 분석 타임아웃 (5분)
+  fixTimeout: 600000            # 수정 타임아웃 (10분)
+  minConfidence: 0.5            # 수정 진행 최소 신뢰도
 ```
+
+### AI 설정 상세 설명
+
+**모델 폴백(Fallback) 메커니즘:**
+- 시스템은 초기 분석 및 수정 시도 시 `preferredModel`로 시작합니다
+- 예산 사용량이 임계값을 초과하면 자동으로 `fallbackModel`로 다운그레이드됩니다
+- 폴백 로직: opus → sonnet → haiku (예산 제약에 따라)
+- 이를 통해 예산 한도 내에서 작업 완료를 보장합니다
+
+**예산 추적:**
+- `budgetPerIssue`: 각 새로운 이슈/PR 생성 사이클마다 리셋됩니다
+- `budgetPerSession`: 단일 워크플로우 세션의 모든 이슈에 대해 누적됩니다
+- 둘 중 하나의 한도에 도달하면 시스템은 폴백 모델을 사용하거나 승인을 위해 일시 정지합니다
+
+**필수 요구사항:**
+- Claude CLI가 설치되어 있고 인증되어 있어야 합니다
+- 설치: `npm install -g @anthropic-ai/claude-cli`
+- 인증: `claude auth login`
 
 ---
 
@@ -394,6 +421,8 @@ checks:
 
 | 서비스 | 항목 | 상태 |
 |--------|------|------|
+| **필수 요구사항** | Claude CLI 설치 | ☐ |
+| | Claude CLI 인증 | ☐ |
 | **GitHub** | PAT 발급 | ☐ |
 | | 라벨 생성 (7개 이상) | ☐ |
 | | Issue 템플릿 추가 | ☐ |

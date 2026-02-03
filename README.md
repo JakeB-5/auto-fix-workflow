@@ -11,6 +11,7 @@ MCP (Model Context Protocol) server for automated GitHub issue management and co
 - **Git Worktree Management**: Isolated development environments for parallel fixes
 - **Code Quality Checks**: Run typecheck, lint, and tests with configurable order
 - **Workflow Orchestration**: Group issues, plan fix strategies, create PRs
+- **AI-Powered Analysis**: Claude CLI integration for automated code analysis and fix generation with budget tracking, intelligent model fallback (opus → sonnet → haiku), retry logic with exponential backoff, structured JSON schema validation, and tool-based security (read-only for analysis, edit-only for fixes)
 
 ## Installation
 

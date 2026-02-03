@@ -386,7 +386,34 @@ checks:
     - test
   timeout: 300000
   failFast: true
+
+ai:
+  budgetPerIssue: 1.0           # Maximum USD per issue (default: 1.0)
+  budgetPerSession: 100.0       # Maximum USD per session (default: 100.0)
+  preferredModel: "opus"        # Primary model (opus|sonnet|haiku)
+  fallbackModel: "sonnet"       # Fallback when budget tight
+  analysisTimeout: 300000       # 5 minutes for analysis
+  fixTimeout: 600000            # 10 minutes for fix operations
+  minConfidence: 0.5            # Minimum confidence to proceed with fix
 ```
+
+### AI Configuration Details
+
+**Model Fallback Mechanism:**
+- The system starts with `preferredModel` for initial analysis and fix attempts
+- If budget usage exceeds thresholds, automatically downgrades to `fallbackModel`
+- Fallback logic: opus → sonnet → haiku (based on budget constraints)
+- This ensures task completion while staying within budget limits
+
+**Budget Tracking:**
+- `budgetPerIssue`: Resets for each new issue/PR creation cycle
+- `budgetPerSession`: Cumulative across all issues in a single workflow session
+- When either limit is reached, the system uses the fallback model or pauses for approval
+
+**Prerequisites:**
+- Claude CLI must be installed and authenticated
+- Install: `npm install -g @anthropic-ai/claude-cli`
+- Authenticate: `claude auth login`
 
 ---
 
@@ -394,6 +421,8 @@ checks:
 
 | Service | Item | Status |
 |---------|------|--------|
+| **Prerequisites** | Claude CLI installed | ☐ |
+| | Claude CLI authenticated | ☐ |
 | **GitHub** | PAT issued | ☐ |
 | | Labels created (7+) | ☐ |
 | | Issue template added | ☐ |
