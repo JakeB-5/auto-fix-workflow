@@ -105,9 +105,9 @@ export async function getWorkspaceTags(config: AsanaConfig): Promise<TagInfo[]> 
 
   const tags: TagInfo[] = [];
 
-  if (response.data && Array.isArray(response.data)) {
+  if (Array.isArray(response.data)) {
     for (const tag of response.data) {
-      const t = tag as unknown as Record<string, unknown>;
+      const t = tag as Record<string, unknown>;
       tags.push({
         gid: t.gid as string,
         name: t.name as string,

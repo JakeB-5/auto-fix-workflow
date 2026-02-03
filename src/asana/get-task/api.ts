@@ -3,9 +3,8 @@
  * @description Asana API call function for getting task details
  */
 
-import type Asana from 'asana';
 import type { AsanaConfig } from '../../common/types/index.js';
-import { getAsanaClient } from '../list-tasks/client.js';
+import { getAsanaClient, type AsanaClientWrapper } from '../list-tasks/client.js';
 
 /** Raw task data from Asana API */
 export interface RawTaskData {
@@ -106,11 +105,11 @@ export async function getTaskFromApi(
 ): Promise<RawTaskData> {
   const client = getAsanaClient(config);
 
-  const task = await client.tasks.getTask(taskGid, {
+  const response = await client.tasks.getTask(taskGid, {
     opt_fields: TASK_OPT_FIELDS,
   });
 
-  return mapRawTask(task);
+  return mapRawTask(response.data as Record<string, unknown>);
 }
 
 /**
@@ -121,21 +120,21 @@ export async function getTaskFromApi(
  * @returns Raw task data
  */
 export async function getTaskWithClient(
-  client: Asana.Client,
+  client: AsanaClientWrapper,
   taskGid: string
 ): Promise<RawTaskData> {
-  const task = await client.tasks.getTask(taskGid, {
+  const response = await client.tasks.getTask(taskGid, {
     opt_fields: TASK_OPT_FIELDS,
   });
 
-  return mapRawTask(task);
+  return mapRawTask(response.data as Record<string, unknown>);
 }
 
 /**
  * Map Asana API response to RawTaskData
  */
-function mapRawTask(task: Asana.resources.Tasks.Type): RawTaskData {
-  const t = task as unknown as Record<string, unknown>;
+function mapRawTask(task: Record<string, unknown>): RawTaskData {
+  const t = task;
 
   return {
     gid: t.gid as string,
@@ -250,9 +249,9 @@ export async function getSubtasks(
 
   const subtasks: Array<{ gid: string; name: string; completed: boolean }> = [];
 
-  if (response.data && Array.isArray(response.data)) {
+  if (Array.isArray(response.data)) {
     for (const subtask of response.data) {
-      const s = subtask as unknown as Record<string, unknown>;
+      const s = subtask as Record<string, unknown>;
       subtasks.push({
         gid: s.gid as string,
         name: s.name as string,

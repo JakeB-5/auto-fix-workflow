@@ -112,8 +112,8 @@ export async function createTag(
     tagData.color = color;
   }
 
-  const response = await client.tags.createTag({ data: tagData } as Parameters<typeof client.tags.createTag>[0]);
-  const t = response as unknown as Record<string, unknown>;
+  const response = await client.tags.createTag({ data: tagData });
+  const t = response.data as Record<string, unknown>;
 
   const tag: TagInfo = {
     gid: t.gid as string,

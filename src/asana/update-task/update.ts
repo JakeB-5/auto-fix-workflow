@@ -140,9 +140,7 @@ export async function updateTask(
   // Apply main task update if there are changes
   if (Object.keys(updateData).length > 0) {
     try {
-      await client.tasks.updateTask(options.taskGid, {
-        data: updateData,
-      } as Parameters<typeof client.tasks.updateTask>[1]);
+      await client.tasks.updateTask(options.taskGid, { data: updateData });
     } catch (error) {
       errors.push(
         `Task update failed: ${error instanceof Error ? error.message : 'Unknown error'}`

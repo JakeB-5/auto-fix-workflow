@@ -58,10 +58,9 @@ export async function addComment(
 
   const response = await client.stories.createStoryForTask(options.taskGid, {
     data: commentData,
-    opt_fields: 'gid,text,html_text,created_at,is_pinned',
-  } as Parameters<typeof client.stories.createStoryForTask>[1]);
+  });
 
-  const s = response as unknown as Record<string, unknown>;
+  const s = response.data as Record<string, unknown>;
 
   return {
     gid: s.gid as string,

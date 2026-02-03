@@ -3,7 +3,7 @@
  * @description Section cache implementation for Asana projects
  */
 
-import type Asana from 'asana';
+import type { AsanaClientWrapper } from './client.js';
 
 /** Section info with GID and name */
 export interface SectionInfo {
@@ -32,7 +32,7 @@ const sectionCache = new Map<string, CacheEntry<SectionInfo[]>>();
  * @returns Array of section info
  */
 export async function getSectionsWithCache(
-  client: Asana.Client,
+  client: AsanaClientWrapper,
   projectGid: string,
   ttlMs: number = DEFAULT_TTL_MS
 ): Promise<SectionInfo[]> {
@@ -60,7 +60,7 @@ export async function getSectionsWithCache(
  * @returns Array of section info
  */
 async function fetchSections(
-  client: Asana.Client,
+  client: AsanaClientWrapper,
   projectGid: string
 ): Promise<SectionInfo[]> {
   const response = await client.sections.getSectionsForProject(projectGid, {
@@ -71,9 +71,10 @@ async function fetchSections(
   // Handle both array and iterator response types
   if (Array.isArray(response.data)) {
     for (const section of response.data) {
+      const s = section as Record<string, unknown>;
       sections.push({
-        gid: section.gid as string,
-        name: section.name as string,
+        gid: s.gid as string,
+        name: s.name as string,
       });
     }
   }
@@ -90,7 +91,7 @@ async function fetchSections(
  * @returns Section GID or null if not found
  */
 export async function getSectionGidByName(
-  client: Asana.Client,
+  client: AsanaClientWrapper,
   projectGid: string,
   sectionName: string
 ): Promise<string | null> {

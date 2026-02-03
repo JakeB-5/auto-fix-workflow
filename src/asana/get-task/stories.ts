@@ -75,9 +75,9 @@ export async function getTaskStories(
 
   const stories: TaskStory[] = [];
 
-  if (response.data && Array.isArray(response.data)) {
+  if (Array.isArray(response.data)) {
     for (const story of response.data) {
-      const s = story as unknown as Record<string, unknown>;
+      const s = story as Record<string, unknown>;
 
       // Skip system stories if not requested
       const type = s.type as string;

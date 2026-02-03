@@ -49,9 +49,7 @@ export async function moveTaskToSection(
       requestData.insert_after = insertAfter;
     }
 
-    await client.sections.addTaskForSection(sectionGid, {
-      data: requestData,
-    } as Parameters<typeof client.sections.addTaskForSection>[1]);
+    await client.sections.addTaskForSection(sectionGid, { data: requestData });
 
     return {
       success: true,
@@ -171,11 +169,11 @@ export async function getCurrentSection(
   const client = getAsanaClient(config);
 
   // Get task memberships
-  const task = await client.tasks.getTask(taskGid, {
+  const response = await client.tasks.getTask(taskGid, {
     opt_fields: 'memberships.section.gid,memberships.section.name,memberships.project.gid',
   });
 
-  const t = task as unknown as Record<string, unknown>;
+  const t = response.data as Record<string, unknown>;
   const memberships = t.memberships as Array<{
     project: { gid: string };
     section: { gid: string; name: string } | null;

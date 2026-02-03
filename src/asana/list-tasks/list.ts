@@ -3,7 +3,6 @@
  * @description Task list query function
  */
 
-import type Asana from 'asana';
 import type { AsanaConfig } from '../../common/types/index.js';
 import { getAsanaClient } from './client.js';
 import { getSectionGidByName } from './cache.js';
@@ -115,7 +114,7 @@ export async function listTasks(
   }
 
   // Fetch tasks from section or project
-  let response: Asana.resources.ResourceList<Asana.resources.Tasks.Type>;
+  let response: { data: unknown[]; next_page?: { offset?: string } };
   if (sectionGid) {
     response = await client.tasks.getTasksForSection(sectionGid, queryParams);
   } else {
@@ -126,12 +125,12 @@ export async function listTasks(
   }
 
   // Map response to TaskListItem
-  const tasks = mapResponseToTasks(response);
+  const tasks = mapResponseToTasks(response.data);
 
   return {
     tasks,
-    nextOffset: (response as unknown as { _response?: { next_page?: { offset?: string } } })._response?.next_page?.offset ?? null,
-    hasMore: !!(response as unknown as { _response?: { next_page?: { offset?: string } } })._response?.next_page?.offset,
+    nextOffset: response.next_page?.offset ?? null,
+    hasMore: !!response.next_page?.offset,
   };
 }
 
@@ -165,14 +164,12 @@ export async function listAllTasks(
 /**
  * Map Asana API response to TaskListItem array
  */
-function mapResponseToTasks(
-  response: Asana.resources.ResourceList<Asana.resources.Tasks.Type>
-): TaskListItem[] {
+function mapResponseToTasks(data: unknown[]): TaskListItem[] {
   const tasks: TaskListItem[] = [];
 
-  if (response.data && Array.isArray(response.data)) {
-    for (const task of response.data) {
-      tasks.push(mapTaskToItem(task));
+  if (Array.isArray(data)) {
+    for (const task of data) {
+      tasks.push(mapTaskToItem(task as Record<string, unknown>));
     }
   }
 
@@ -182,8 +179,8 @@ function mapResponseToTasks(
 /**
  * Map single Asana task to TaskListItem
  */
-function mapTaskToItem(task: Asana.resources.Tasks.Type): TaskListItem {
-  const t = task as unknown as Record<string, unknown>;
+function mapTaskToItem(task: Record<string, unknown>): TaskListItem {
+  const t = task;
 
   return {
     gid: t.gid as string,

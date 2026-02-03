@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-02-03
+
+### Fixed
+
+- **Asana npm v3 API Migration**: Updated client wrapper to work with `asana@3.0.0` (#5)
+  - Migrated from deprecated `Asana.Client.create()` (v1) to `Asana.ApiClient.instance` + individual API classes (v3)
+  - Created wrapper interface (`AsanaClientWrapper`) for consistent API access
+  - Updated all Asana modules to use new response structure (`{ data: ... }`)
+  - Fixed TypeScript compatibility with typeless v3 SDK
+
 ## [0.3.5] - 2026-02-03
 
 ### Fixed

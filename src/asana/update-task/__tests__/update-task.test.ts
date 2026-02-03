@@ -323,11 +323,13 @@ describe('asana/update-task/comments', () => {
   describe('addComment', () => {
     it('should add plain text comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: 'Test comment',
-        html_text: '<body>Test comment</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: 'Test comment',
+          html_text: '<body>Test comment</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -358,11 +360,13 @@ describe('asana/update-task/comments', () => {
 
     it('should add Markdown comment converted to HTML', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body><strong>Bold</strong> text</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body><strong>Bold</strong> text</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -385,11 +389,13 @@ describe('asana/update-task/comments', () => {
 
     it('should add pinned comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: 'Pinned comment',
-        html_text: '<body>Pinned comment</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: true,
+        data: {
+          gid: 'story-123',
+          text: 'Pinned comment',
+          html_text: '<body>Pinned comment</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: true,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -415,11 +421,13 @@ describe('asana/update-task/comments', () => {
   describe('addTextComment', () => {
     it('should add plain text comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: 'Test',
-        html_text: '<body>Test</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: 'Test',
+          html_text: '<body>Test</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -433,11 +441,13 @@ describe('asana/update-task/comments', () => {
   describe('addMarkdownComment', () => {
     it('should add Markdown comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body><em>Italic</em></body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body><em>Italic</em></body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -451,11 +461,13 @@ describe('asana/update-task/comments', () => {
   describe('addPinnedComment', () => {
     it('should add pinned comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: 'Pinned',
-        html_text: '<body>Pinned</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: true,
+        data: {
+          gid: 'story-123',
+          text: 'Pinned',
+          html_text: '<body>Pinned</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: true,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -469,11 +481,13 @@ describe('asana/update-task/comments', () => {
   describe('addPRLinkComment', () => {
     it('should format PR link comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body>PR link</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body>PR link</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -500,11 +514,13 @@ describe('asana/update-task/comments', () => {
   describe('addIssueLinkComment', () => {
     it('should format issue link comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body>Issue link</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body>Issue link</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -531,11 +547,13 @@ describe('asana/update-task/comments', () => {
   describe('addStatusComment', () => {
     it('should format status comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body>Status</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body>Status</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -549,11 +567,13 @@ describe('asana/update-task/comments', () => {
   describe('addWorkflowComment', () => {
     it('should format success workflow comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body>Workflow</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body>Workflow</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -572,11 +592,13 @@ describe('asana/update-task/comments', () => {
 
     it('should format failure workflow comment', async () => {
       const mockResponse = {
-        gid: 'story-123',
-        text: '',
-        html_text: '<body>Workflow</body>',
-        created_at: '2024-01-01T10:00:00.000Z',
-        is_pinned: false,
+        data: {
+          gid: 'story-123',
+          text: '',
+          html_text: '<body>Workflow</body>',
+          created_at: '2024-01-01T10:00:00.000Z',
+          is_pinned: false,
+        },
       };
 
       mockAsanaClient.stories.createStoryForTask = vi.fn().mockResolvedValue(mockResponse);
@@ -756,12 +778,14 @@ describe('asana/update-task/sections', () => {
   describe('getCurrentSection', () => {
     it('should get current section for task', async () => {
       const mockTask = {
-        memberships: [
-          {
-            project: { gid: 'project-456' },
-            section: { gid: 'section-789', name: 'In Progress' },
-          },
-        ],
+        data: {
+          memberships: [
+            {
+              project: { gid: 'project-456' },
+              section: { gid: 'section-789', name: 'In Progress' },
+            },
+          ],
+        },
       };
 
       mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue(mockTask);
@@ -776,12 +800,14 @@ describe('asana/update-task/sections', () => {
 
     it('should return null when task not in project', async () => {
       const mockTask = {
-        memberships: [
-          {
-            project: { gid: 'other-project' },
-            section: { gid: 'section-789', name: 'In Progress' },
-          },
-        ],
+        data: {
+          memberships: [
+            {
+              project: { gid: 'other-project' },
+              section: { gid: 'section-789', name: 'In Progress' },
+            },
+          ],
+        },
       };
 
       mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue(mockTask);
@@ -793,12 +819,14 @@ describe('asana/update-task/sections', () => {
 
     it('should return null when task has no section', async () => {
       const mockTask = {
-        memberships: [
-          {
-            project: { gid: 'project-456' },
-            section: null,
-          },
-        ],
+        data: {
+          memberships: [
+            {
+              project: { gid: 'project-456' },
+              section: null,
+            },
+          ],
+        },
       };
 
       mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue(mockTask);

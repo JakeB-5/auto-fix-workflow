@@ -55,13 +55,13 @@ export async function getTaskAttachments(
 ): Promise<TaskAttachment[]> {
   const client = getAsanaClient(config);
 
-  const response = await client.attachments.getAttachmentsForObject(taskGid, {
+  const response = await client.attachments.getAttachmentsForTask(taskGid, {
     opt_fields: ATTACHMENT_OPT_FIELDS,
   });
 
   const attachments: TaskAttachment[] = [];
 
-  if (response.data && Array.isArray(response.data)) {
+  if (Array.isArray(response.data)) {
     for (const attachment of response.data) {
       const a = attachment as unknown as Record<string, unknown>;
       attachments.push({

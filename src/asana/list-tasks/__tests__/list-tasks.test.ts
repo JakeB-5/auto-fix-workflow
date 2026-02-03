@@ -118,9 +118,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-2',
           },
         ],
-        _response: {
-          next_page: null,
-        },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(mockResponse);
@@ -171,7 +169,7 @@ describe('listTasks', () => {
     it('should include completed tasks when requested', async () => {
       const mockResponse = {
         data: [],
-        _response: { next_page: null },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(mockResponse);
@@ -210,10 +208,8 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-1',
           },
         ],
-        _response: {
-          next_page: {
-            offset: 'next-offset-token',
-          },
+        next_page: {
+          offset: 'next-offset-token',
         },
       };
 
@@ -242,7 +238,7 @@ describe('listTasks', () => {
     it('should handle empty result set', async () => {
       const mockResponse = {
         data: [],
-        _response: { next_page: null },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(mockResponse);
@@ -279,7 +275,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-1',
           },
         ],
-        _response: { next_page: null },
+        next_page: null,
       };
 
       vi.mocked(getSectionGidByName).mockResolvedValue('section-123');
@@ -307,7 +303,7 @@ describe('listTasks', () => {
     it('should fall back to project query when section not found', async () => {
       const mockResponse = {
         data: [],
-        _response: { next_page: null },
+        next_page: null,
       };
 
       vi.mocked(getSectionGidByName).mockResolvedValue(null);
@@ -364,7 +360,7 @@ describe('listTasks', () => {
             // missing name
           },
         ],
-        _response: { next_page: null },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(
@@ -403,9 +399,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-1',
           },
         ],
-        _response: {
-          next_page: { offset: 'offset-2' },
-        },
+        next_page: { offset: 'offset-2' },
       };
 
       const page2 = {
@@ -426,9 +420,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-2',
           },
         ],
-        _response: {
-          next_page: { offset: 'offset-3' },
-        },
+        next_page: { offset: 'offset-3' },
       };
 
       const page3 = {
@@ -449,9 +441,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-3',
           },
         ],
-        _response: {
-          next_page: null,
-        },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject
@@ -487,9 +477,7 @@ describe('listTasks', () => {
             permalink_url: 'https://app.asana.com/0/task-1',
           },
         ],
-        _response: {
-          next_page: null,
-        },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(singlePage);
@@ -505,9 +493,7 @@ describe('listTasks', () => {
     it('should handle empty results', async () => {
       const emptyPage = {
         data: [],
-        _response: {
-          next_page: null,
-        },
+        next_page: null,
       };
 
       mockClient.tasks.getTasksForProject.mockResolvedValue(emptyPage);

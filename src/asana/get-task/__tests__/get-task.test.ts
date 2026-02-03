@@ -113,7 +113,7 @@ describe('asana/get-task/api', () => {
         liked: false,
       };
 
-      mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue(mockTaskResponse);
+      mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue({ data: mockTaskResponse });
 
       const result = await getTaskWithClient(mockAsanaClient, '789');
 
@@ -190,7 +190,7 @@ describe('asana/get-task/api', () => {
         permalink_url: 'https://app.asana.com/0/0/123',
       };
 
-      mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue(minimalTask);
+      mockAsanaClient.tasks.getTask = vi.fn().mockResolvedValue({ data: minimalTask });
 
       const result = await getTaskWithClient(mockAsanaClient, '123');
 
@@ -667,7 +667,7 @@ describe('asana/get-task/attachments', () => {
         ],
       };
 
-      mockAsanaClient.attachments.getAttachmentsForObject = vi.fn().mockResolvedValue(mockAttachments);
+      mockAsanaClient.attachments.getAttachmentsForTask = vi.fn().mockResolvedValue(mockAttachments);
 
       const result = await getTaskAttachments(mockConfig, '789');
 
