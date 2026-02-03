@@ -116,7 +116,8 @@ export function getAsanaClient(config: AsanaConfig): AsanaClientWrapper {
         return { data: result.data || [] };
       },
       addTaskForSection: async (sectionGid: string, body: { data: Record<string, unknown> }) => {
-        const result = await sectionsApi.addTaskForSection(body, sectionGid);
+        // Asana v3 SDK: addTaskForSection(section_gid, opts) where opts = { body: { data: {...} } }
+        const result = await sectionsApi.addTaskForSection(sectionGid, { body });
         return { data: result.data };
       },
     },
@@ -220,7 +221,8 @@ export function createClient(token: string): AsanaClientWrapper {
         return { data: result.data || [] };
       },
       addTaskForSection: async (sectionGid: string, body: { data: Record<string, unknown> }) => {
-        const result = await localSectionsApi.addTaskForSection(body, sectionGid);
+        // Asana v3 SDK: addTaskForSection(section_gid, opts) where opts = { body: { data: {...} } }
+        const result = await localSectionsApi.addTaskForSection(sectionGid, { body });
         return { data: result.data };
       },
     },

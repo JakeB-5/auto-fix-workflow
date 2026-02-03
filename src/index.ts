@@ -50,13 +50,19 @@ export async function createServer(): Promise<Server> {
     }
   );
 
-  // Load configuration for Asana tools
+  // Load configuration for Asana and GitHub tools
   const configResult = await loadConfig();
   let asanaConfig: AsanaConfig | undefined;
+  let githubLabelConfig: { autoFix?: string; skip?: string; failed?: string; processing?: string } | undefined;
   let configError: string | undefined;
 
   if (isSuccess(configResult)) {
     asanaConfig = configResult.data.asana;
+    // Extract GitHub labels config if available
+    const githubConfig = configResult.data.github;
+    if (githubConfig?.labels) {
+      githubLabelConfig = githubConfig.labels;
+    }
   } else {
     // Store error for tool responses and log for debugging
     configError = configResult.error.message;
@@ -218,7 +224,7 @@ Example usage:
           }
 
           const asanaConfigForTool = asanaConfig;
-          const result = await handleCreateIssueTool(args as any, token, asanaConfigForTool);
+          const result = await handleCreateIssueTool(args as any, token, asanaConfigForTool, githubLabelConfig);
           return {
             content: [
               {
@@ -421,6 +427,64 @@ async function main(): Promise<void> {
   });
 }
 
+/**
+ * Show CLI help message
+ */
+function showHelp(): void {
+  console.log(`
+auto-fix-workflow - Automated GitHub Issue Fix Workflow
+
+USAGE:
+  npx auto-fix-workflow <command> [options]
+
+COMMANDS:
+  init              Initialize configuration files
+  help              Show this help message
+
+MCP SERVER MODE:
+  When run without a command (or via MCP client), starts as an MCP server
+  providing tools for GitHub and Asana integration.
+
+AVAILABLE MCP TOOLS:
+  GitHub:
+    - list_issues           List GitHub issues
+    - get_github_issue      Get issue details
+    - github_create_issue   Create a new issue
+    - update_github_issue   Update an issue
+    - github_create_pr      Create a pull request
+
+  Asana:
+    - asana_list_tasks      List Asana tasks
+    - asana_get_task        Get task details
+    - asana_update_task     Update a task
+    - asana_analyze_task    Analyze task for triage
+
+EXAMPLES:
+  npx auto-fix-workflow init              # Initialize config
+  npx auto-fix-workflow help              # Show this help
+
+CONFIGURATION:
+  Create .auto-fix.yaml in your project root with GitHub and Asana settings.
+  Run 'npx auto-fix-workflow init' to create a template.
+
+ENVIRONMENT VARIABLES:
+  GITHUB_TOKEN       GitHub personal access token
+  ASANA_TOKEN        Asana personal access token
+  AUTO_FIX_CONFIG    Path to config file (optional)
+
+For more information, visit: https://github.com/your-org/auto-fix-workflow
+`);
+}
+
+/**
+ * Check if running in interactive TTY mode (not as MCP server)
+ */
+function isInteractiveCLI(): boolean {
+  // Check if stdin is a TTY (terminal) - if true, user is running directly
+  // MCP clients pipe JSON-RPC through stdin, so isTTY will be false
+  return process.stdin.isTTY === true;
+}
+
 // Check for CLI commands before starting MCP server
 const args = process.argv.slice(2);
 const command = args[0];
@@ -441,8 +505,22 @@ if (command === 'init') {
     console.error('Init failed:', error);
     process.exit(1);
   });
+} else if (command === 'help' || command === '--help' || command === '-h') {
+  // Show help
+  showHelp();
+  process.exit(0);
+} else if (command === '--version' || command === '-v') {
+  // Show version
+  console.log('auto-fix-workflow v0.3.6');
+  process.exit(0);
+} else if (isInteractiveCLI() && !command) {
+  // Running in terminal without command - show help instead of hanging
+  console.log('auto-fix-workflow: Running in interactive mode without MCP client.\n');
+  showHelp();
+  console.log('\nTo start as MCP server, run via an MCP client (e.g., Claude Code).');
+  process.exit(0);
 } else {
-  // Run MCP server (default)
+  // Run MCP server (default for non-TTY or unknown commands)
   main().catch((error: unknown) => {
     console.error('Failed to start server:', error);
     process.exit(1);
