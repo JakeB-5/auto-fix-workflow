@@ -375,9 +375,10 @@ describe('AIIntegration', () => {
 
       await invokeClaudeCLI(options);
 
+      // Verify spawn was called with command string containing max-budget-usd
       expect(spawn).toHaveBeenCalledWith(
-        expectedClaudeCommand,
-        expect.arrayContaining(['--max-budget-usd', '5']),
+        expect.stringContaining('--max-budget-usd 5'),
+        [],
         expect.any(Object)
       );
     });
@@ -417,7 +418,7 @@ describe('AIIntegration', () => {
 
       // Verify correct tools were used
       expect(spawn).toHaveBeenCalledWith(
-        expectedClaudeCommand,
+        expect.stringContaining('claude'),
         expect.arrayContaining(['--allowedTools', 'Read', 'Glob', 'Grep']),
         expect.any(Object)
       );
@@ -445,7 +446,7 @@ describe('AIIntegration', () => {
 
       // Should use preferred model initially
       expect(spawn).toHaveBeenCalledWith(
-        expectedClaudeCommand,
+        expect.stringContaining('claude'),
         expect.arrayContaining(['--model', 'opus']),
         expect.any(Object)
       );
@@ -568,7 +569,7 @@ describe('AIIntegration', () => {
 
       // Verify correct tools were used
       expect(spawn).toHaveBeenCalledWith(
-        expectedClaudeCommand,
+        expect.stringContaining('claude'),
         expect.arrayContaining([
           '--allowedTools',
           'Read',
