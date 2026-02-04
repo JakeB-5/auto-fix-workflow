@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-04
+
+### Fixed
+
+- **ES Module Compatibility**: Fixed `require is not defined` error in triage CLI by using dynamic `import()` instead of `require()` for ES module compatibility
+
 ## [0.4.0] - 2026-02-04
 
 ### Added
@@ -231,6 +237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.1]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.3.7...v0.4.0
 [0.1.1]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/JakeB-5/auto-fix-workflow/releases/tag/v0.1.0
