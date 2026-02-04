@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **GitHub Token Config**: `github_create_issue` MCP tool now properly reads GitHub token from `.auto-fix.yaml` configuration file (#10)
+  - Supports both `tokens.github` and `github.token` formats
+  - Falls back to `GITHUB_TOKEN` environment variable for backwards compatibility
+  - Improved error message to guide users on both configuration methods
+
 ## [0.3.6] - 2026-02-03
 
 ### Fixed
