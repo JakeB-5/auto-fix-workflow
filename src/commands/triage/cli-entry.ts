@@ -264,7 +264,7 @@ export async function main(argv: string[] = []): Promise<void> {
     }
 
     // Create toolset in direct mode
-    const toolset = createToolset('direct', { config: globalConfig });
+    const toolset = await createToolset('direct', { config: globalConfig });
 
     // Verbose output
     if (options.verbose) {

@@ -6,12 +6,15 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { TriageToolset, ToolsetMode } from './toolset.types.js';
 import type { Config } from '../../common/types/index.js';
+import { ok } from '../../common/types/index.js';
 
 /**
  * MCP context for MCP toolset
  */
 export interface MCPContext {
   readonly client: Client;
+  readonly owner: string;
+  readonly repo: string;
 }
 
 /**
@@ -28,22 +31,23 @@ export interface DirectContext {
  * @param context - Context object (MCPContext for mcp, DirectContext for direct)
  * @returns TriageToolset instance
  */
-export function createToolset(
+export async function createToolset(
   mode: 'mcp',
   context: MCPContext
-): TriageToolset;
-export function createToolset(
+): Promise<TriageToolset>;
+export async function createToolset(
   mode: 'direct',
   context: DirectContext
-): TriageToolset;
-export function createToolset(
+): Promise<TriageToolset>;
+export async function createToolset(
   mode: ToolsetMode,
   context: MCPContext | DirectContext
-): TriageToolset {
+): Promise<TriageToolset> {
   if (mode === 'mcp') {
     // Import and create MCP toolset
     // This uses existing mcp-tools implementations
-    return createMCPToolset((context as MCPContext).client);
+    const mcpContext = context as MCPContext;
+    return createMCPToolset(mcpContext.client, mcpContext.owner, mcpContext.repo);
   }
 
   // Create direct API toolset
@@ -53,16 +57,16 @@ export function createToolset(
 /**
  * Create MCP-based toolset (lazy implementation - wraps existing mcp-tools)
  */
-function createMCPToolset(client: Client): TriageToolset {
-  // Import existing MCP tools
-  const { createAsanaListTool } = require('./mcp-tools/asana-list.js');
-  const { createAsanaUpdateTool } = require('./mcp-tools/asana-update.js');
-  const { createGitHubCreateTool } = require('./mcp-tools/github-create.js');
-  const { createAIAnalyzeTool } = require('./mcp-tools/ai-analyze.js');
+async function createMCPToolset(client: Client, owner: string, repo: string): Promise<TriageToolset> {
+  // Import existing MCP tools using dynamic import
+  const { createAsanaListTool } = await import('./mcp-tools/asana-list.js');
+  const { createAsanaUpdateTool } = await import('./mcp-tools/asana-update.js');
+  const { createGitHubCreateTool } = await import('./mcp-tools/github-create.js');
+  const { createAIAnalyzeTool } = await import('./mcp-tools/ai-analyze.js');
 
   const asanaList = createAsanaListTool(client);
   const asanaUpdate = createAsanaUpdateTool(client);
-  const githubCreate = createGitHubCreateTool(client);
+  const githubCreate = createGitHubCreateTool(client, owner, repo);
   const aiAnalyze = createAIAnalyzeTool(client);
 
   return {
@@ -70,11 +74,27 @@ function createMCPToolset(client: Client): TriageToolset {
     asana: {
       listTasks: asanaList.listTasks.bind(asanaList),
       getTask: asanaList.getTask.bind(asanaList),
-      updateTask: asanaUpdate.updateTask.bind(asanaUpdate),
+      // Wrap updateTask to return void instead of AsanaUpdateResult
+      updateTask: async (params) => {
+        const result = await asanaUpdate.updateTask(params);
+        if (result.success) {
+          return ok(undefined);
+        }
+        return result;
+      },
       findSectionByName: asanaList.findSectionByName.bind(asanaList),
     },
     github: {
-      createIssue: githubCreate.createIssue.bind(githubCreate),
+      // Wrap createIssue to use the owner/repo from context (params are ignored)
+      createIssue: async (params) => {
+        return githubCreate.createIssue({
+          title: params.title,
+          body: params.body,
+          labels: params.labels,
+          assignees: params.assignees,
+          milestone: params.milestone,
+        });
+      },
     },
     analyzer: {
       analyzeTask: aiAnalyze.analyzeTask.bind(aiAnalyze),
@@ -85,9 +105,9 @@ function createMCPToolset(client: Client): TriageToolset {
 /**
  * Create direct API toolset
  */
-function createDirectToolset(config: Config): TriageToolset {
-  // Import direct tools (lazy to avoid circular deps)
-  const { createDirectAPIToolset, canCreateDirectToolset } = require('./direct-tools/index.js');
+async function createDirectToolset(config: Config): Promise<TriageToolset> {
+  // Import direct tools using dynamic import
+  const { createDirectAPIToolset, canCreateDirectToolset } = await import('./direct-tools/index.js');
 
   if (!canCreateDirectToolset(config)) {
     throw new Error('Cannot create direct toolset: missing required config (asana, github)');
