@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-02-04
+
+### Fixed
+
+- **AI Response Parsing**: Fixed parsing of Claude CLI JSON-wrapped output
+  - Properly extracts `result` field from `--output-format json` output
+  - Handles JSON embedded in markdown code blocks
+  - Falls back to heuristic analysis only when actual parsing fails
+
 ## [0.4.3] - 2026-02-04
 
 ### Fixed
@@ -260,6 +269,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.4]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.0...v0.4.1

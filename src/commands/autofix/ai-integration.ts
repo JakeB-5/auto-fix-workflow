@@ -497,9 +497,27 @@ export class AIIntegration {
 
     // Parse response
     try {
-      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"issueType"[\s\S]*?\}/);
+      // When using --output-format json, the output is wrapped in a JSON object
+      // with the actual response in the "result" field
+      let textToSearch = claudeResult.output;
+
+      // Try to extract the "result" field from JSON wrapper
+      const wrapperMatch = claudeResult.output.match(/"result"\s*:\s*"([\s\S]*?)(?:","stop_reason|"\s*,\s*"stop_reason)/);
+      if (wrapperMatch) {
+        // Unescape the JSON string
+        textToSearch = wrapperMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+      }
+
+      // Find the issueType JSON within the text (may be in a code block)
+      const jsonMatch = textToSearch.match(/\{[^{}]*"issueType"[^{}]*\}/s);
       if (!jsonMatch) {
-        return ok(this.getFallbackTaskAnalysis(task));
+        // Try a more lenient pattern for nested objects
+        const lenientMatch = textToSearch.match(/\{\s*"issueType"\s*:\s*"[^"]+?"[\s\S]*?"confidence"\s*:\s*[\d.]+\s*\}/);
+        if (!lenientMatch) {
+          return ok(this.getFallbackTaskAnalysis(task));
+        }
+        const parsed = JSON.parse(lenientMatch[0]) as TaskAnalysis;
+        return ok(parsed);
       }
 
       const parsed = JSON.parse(jsonMatch[0]) as TaskAnalysis;
