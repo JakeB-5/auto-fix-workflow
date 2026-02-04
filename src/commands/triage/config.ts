@@ -34,10 +34,28 @@ const CONFIG_FILE_NAMES = [
 
 /**
  * Raw configuration structure from YAML
+ * Supports both standard .auto-fix.yaml format (from init) and legacy format
  */
 interface RawConfig {
   triage?: Partial<TriageConfig>;
   asana?: {
+    // Standard format (from init command)
+    projectId?: string;
+    workspaceId?: string;
+    sections?: {
+      triage?: string;       // "To Triage"
+      needsInfo?: string;    // "Needs More Info"
+      triaged?: string;      // "Triaged" (processed section)
+    };
+    tags?: {
+      triaged?: string;      // synced tag
+      needsInfo?: string;
+      cannotReproduce?: string;
+      unclear?: string;
+      needsContext?: string;
+      skip?: string;
+    };
+    // Legacy format
     defaultProjectGid?: string;
     triageSection?: string;
     processedSection?: string;
@@ -45,6 +63,12 @@ interface RawConfig {
   };
   github?: {
     defaultLabels?: string[];
+    labels?: {
+      autoFix?: string;
+      skip?: string;
+      failed?: string;
+      processing?: string;
+    };
   };
   retry?: {
     maxAttempts?: number;
@@ -78,16 +102,33 @@ export async function loadTriageConfig(
 
 /**
  * Merge raw config with defaults
+ * Priority: triage section > standard asana format (from init) > legacy format > defaults
  */
 function mergeConfig(raw: RawConfig): TriageConfig {
   return {
-    defaultProjectGid: raw.triage?.defaultProjectGid ?? raw.asana?.defaultProjectGid,
+    // Project GID: triage > standard (asana.projectId) > legacy (asana.defaultProjectGid)
+    defaultProjectGid:
+      raw.triage?.defaultProjectGid ??
+      raw.asana?.projectId ??
+      raw.asana?.defaultProjectGid,
+    // Triage section: triage > standard (asana.sections.triage) > legacy (asana.triageSection) > default
     triageSectionName:
-      raw.triage?.triageSectionName ?? raw.asana?.triageSection ?? DEFAULT_TRIAGE_CONFIG.triageSectionName,
+      raw.triage?.triageSectionName ??
+      raw.asana?.sections?.triage ??
+      raw.asana?.triageSection ??
+      DEFAULT_TRIAGE_CONFIG.triageSectionName,
+    // Processed section: triage > standard (asana.sections.triaged) > legacy (asana.processedSection) > default
     processedSectionName:
-      raw.triage?.processedSectionName ?? raw.asana?.processedSection ?? DEFAULT_TRIAGE_CONFIG.processedSectionName,
+      raw.triage?.processedSectionName ??
+      raw.asana?.sections?.triaged ??
+      raw.asana?.processedSection ??
+      DEFAULT_TRIAGE_CONFIG.processedSectionName,
+    // Synced tag: triage > standard (asana.tags.triaged) > legacy (asana.syncedTag) > default
     syncedTagName:
-      raw.triage?.syncedTagName ?? raw.asana?.syncedTag ?? DEFAULT_TRIAGE_CONFIG.syncedTagName,
+      raw.triage?.syncedTagName ??
+      raw.asana?.tags?.triaged ??
+      raw.asana?.syncedTag ??
+      DEFAULT_TRIAGE_CONFIG.syncedTagName,
     defaultLabels:
       raw.triage?.defaultLabels ?? raw.github?.defaultLabels ?? DEFAULT_TRIAGE_CONFIG.defaultLabels,
     priorityFieldName: raw.triage?.priorityFieldName ?? DEFAULT_TRIAGE_CONFIG.priorityFieldName,
