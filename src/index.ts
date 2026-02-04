@@ -53,13 +53,15 @@ export async function createServer(): Promise<Server> {
   // Load configuration for Asana and GitHub tools
   const configResult = await loadConfig();
   let asanaConfig: AsanaConfig | undefined;
+  let githubToken: string | undefined;
   let githubLabelConfig: { autoFix?: string; skip?: string; failed?: string; processing?: string } | undefined;
   let configError: string | undefined;
 
   if (isSuccess(configResult)) {
     asanaConfig = configResult.data.asana;
-    // Extract GitHub labels config if available
+    // Extract GitHub config if available
     const githubConfig = configResult.data.github;
+    githubToken = githubConfig?.token || process.env['GITHUB_TOKEN'];
     if (githubConfig?.labels) {
       githubLabelConfig = githubConfig.labels;
     }
@@ -207,7 +209,7 @@ Example usage:
         }
 
         case 'github_create_issue': {
-          const token = process.env['GITHUB_TOKEN'];
+          const token = githubToken || process.env['GITHUB_TOKEN'];
           if (!token) {
             return {
               content: [
@@ -215,7 +217,7 @@ Example usage:
                   type: 'text',
                   text: JSON.stringify({
                     success: false,
-                    error: 'GITHUB_TOKEN environment variable is required',
+                    error: 'GitHub token is required. Set tokens.github in .auto-fix.yaml or GITHUB_TOKEN environment variable.',
                   }),
                 },
               ],
