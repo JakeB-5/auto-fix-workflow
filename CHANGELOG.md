@@ -7,12 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CLI Standalone Mode**: Run `triage` and `autofix` commands without MCP client
+  - `npx auto-fix-workflow autofix` - Direct CLI execution with all existing options
+  - `npx auto-fix-workflow triage` - Full standalone triage implementation
+  - New `--help` output for both commands with usage examples
+- **TriageToolset Abstraction**: Unified interface for MCP and Direct API modes
+  - `TriageToolset` interface with `AsanaToolset`, `GitHubToolset`, `AnalyzerToolset`
+  - Factory pattern (`createToolset()`) for mode-based toolset creation
+  - Seamless switching between MCP client mode and standalone CLI mode
+- **Direct API Adapters**: Native API wrappers for standalone execution
+  - `AsanaDirectAdapter`: Wraps existing Asana API modules
+  - `GitHubDirectAdapter`: Wraps existing GitHub API modules
+  - `AnalyzerDirectAdapter`: Uses `AIIntegration` for task analysis
+- **AI Task Analysis**: `analyzeAsanaTask()` method in `AIIntegration` class
+  - Claude CLI-based analysis with structured JSON output
+  - Heuristic fallback when Claude CLI is unavailable
+  - Issue type, priority, component, and acceptance criteria extraction
+- **MCP Asana getTask**: Added `getTask()` method to `AsanaListTool` for MCP mode compatibility
+
 ### Fixed
 
 - **GitHub Token Config**: `github_create_issue` MCP tool now properly reads GitHub token from `.auto-fix.yaml` configuration file (#10)
   - Supports both `tokens.github` and `github.token` formats
   - Falls back to `GITHUB_TOKEN` environment variable for backwards compatibility
   - Improved error message to guide users on both configuration methods
+
+### Documentation
+
+- **SDD Specifications**: Added `cli/standalone-commands/` spec with plan and tasks
+  - Detailed implementation plan with 6 phases
+  - 11 task items with dependency graph
 
 ## [0.3.6] - 2026-02-03
 
