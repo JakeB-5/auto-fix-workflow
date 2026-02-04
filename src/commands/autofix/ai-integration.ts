@@ -108,43 +108,43 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     streamOutput = true, // Default to streaming
   } = options;
 
-  // Build command arguments
+  // Build command string with all arguments
   // Use stream-json for real-time output visibility
-  const args: string[] = [
+  const cmdParts: string[] = [
+    'claude',
     '--dangerously-skip-permissions',
     '--print',
     '--output-format', streamOutput ? 'stream-json' : 'json',
   ];
 
   if (model) {
-    args.push('--model', model);
+    cmdParts.push('--model', model);
   }
 
   if (allowedTools.length > 0) {
-    args.push('--allowedTools', ...allowedTools);
+    cmdParts.push('--allowedTools', ...allowedTools);
   }
 
   if (maxBudget !== undefined) {
-    args.push('--max-budget-usd', maxBudget.toString());
+    cmdParts.push('--max-budget-usd', maxBudget.toString());
   }
 
-  // Pass prompt via stdin to avoid EINVAL errors with special characters on Windows
-  // Using '-' as argument tells Claude CLI to read prompt from stdin
-  args.push('-');
+  // Build complete command string (prompt will be piped via stdin)
+  const commandStr = cmdParts.join(' ');
 
   return new Promise((resolve) => {
-    // Use shell: false to avoid DEP0190 warning
-    // On Windows, need to call claude.cmd directly when shell is false
-    const command = process.platform === 'win32' ? 'claude.cmd' : 'claude';
-    const claude = spawn(command, args, {
+    // Use shell: true with command as string (no args array) to avoid DEP0190 warning
+    // The prompt is piped through stdin to avoid EINVAL errors with special characters
+    const claude = spawn(commandStr, [], {
       cwd: workingDir || process.cwd(),
       env: { ...process.env },
-      shell: false,
+      shell: true,
       // On Windows, hide the console window
       windowsHide: true,
     });
 
     // Write prompt to stdin and close it
+    // This avoids command-line argument issues with special characters (Korean, etc.)
     if (claude.stdin) {
       claude.stdin.write(prompt);
       claude.stdin.end();

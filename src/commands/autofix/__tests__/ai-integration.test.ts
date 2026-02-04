@@ -28,8 +28,8 @@ vi.mock('child_process', () => ({
 // Import the mocked module
 import { spawn } from 'child_process';
 
-// Expected command varies by platform (matches ai-integration.ts implementation)
-const expectedClaudeCommand = process.platform === 'win32' ? 'claude.cmd' : 'claude';
+// Expected command is now a full command string (not platform-specific executable)
+// since we use shell: true with command as string
 
 // Mock data
 const mockIssue: Issue = {
@@ -251,26 +251,24 @@ describe('AIIntegration', () => {
         });
       }
 
+      // Command is now a full string with shell: true (prompt piped via stdin)
       expect(spawn).toHaveBeenCalledWith(
-        expectedClaudeCommand,
-        expect.arrayContaining([
-          '--dangerously-skip-permissions',
-          '--print',
-          '--output-format',
-          'stream-json',  // Changed from 'json' to enable real-time output
-          '--model',
-          'opus',
-          '--allowedTools',
-          'Read',
-          'Grep',
-          '-',  // Prompt is passed via stdin to avoid EINVAL errors on Windows
-        ]),
+        expect.stringContaining('claude'),
+        [],  // Empty args array - all options in command string
         expect.objectContaining({
           cwd: '/test/path',
-          shell: false,  // Changed from true to avoid DEP0190 warning
+          shell: true,  // shell: true with command string (no args) avoids DEP0190
           windowsHide: true,
         })
       );
+      // Verify command string contains expected options
+      const callArgs = vi.mocked(spawn).mock.calls[0];
+      const commandStr = callArgs[0] as string;
+      expect(commandStr).toContain('--dangerously-skip-permissions');
+      expect(commandStr).toContain('--print');
+      expect(commandStr).toContain('--output-format stream-json');
+      expect(commandStr).toContain('--model opus');
+      expect(commandStr).toContain('--allowedTools Read Grep');
     });
 
     it('should handle CLI not found error', async () => {
