@@ -21,6 +21,8 @@ export async function executeCommand(cmd: CheckCommand): Promise<SingleCheckResu
     let exitCode: number | undefined;
 
     // Spawn child process
+    // Note: shell: true with args triggers DEP0190 warning but is required
+    // for npm scripts. The warning is benign for internal commands.
     const child = spawn(cmd.command, cmd.args, {
       cwd: cmd.cwd,
       shell: true,

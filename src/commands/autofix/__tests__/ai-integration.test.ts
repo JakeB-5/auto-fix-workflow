@@ -28,6 +28,9 @@ vi.mock('child_process', () => ({
 // Import the mocked module
 import { spawn } from 'child_process';
 
+// Expected command varies by platform (matches ai-integration.ts implementation)
+const expectedClaudeCommand = process.platform === 'win32' ? 'claude.cmd' : 'claude';
+
 // Mock data
 const mockIssue: Issue = {
   number: 123,
@@ -244,7 +247,7 @@ describe('AIIntegration', () => {
       }
 
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        expectedClaudeCommand,
         expect.arrayContaining([
           '--dangerously-skip-permissions',
           '--print',
@@ -259,7 +262,8 @@ describe('AIIntegration', () => {
         ]),
         expect.objectContaining({
           cwd: '/test/path',
-          shell: true,
+          shell: false,  // Changed from true to avoid DEP0190 warning
+          windowsHide: true,
         })
       );
     });
@@ -369,7 +373,7 @@ describe('AIIntegration', () => {
       await invokeClaudeCLI(options);
 
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        expectedClaudeCommand,
         expect.arrayContaining(['--max-budget-usd', '5']),
         expect.any(Object)
       );
@@ -410,7 +414,7 @@ describe('AIIntegration', () => {
 
       // Verify correct tools were used
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        expectedClaudeCommand,
         expect.arrayContaining(['--allowedTools', 'Read', 'Glob', 'Grep']),
         expect.any(Object)
       );
@@ -438,7 +442,7 @@ describe('AIIntegration', () => {
 
       // Should use preferred model initially
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        expectedClaudeCommand,
         expect.arrayContaining(['--model', 'opus']),
         expect.any(Object)
       );
@@ -561,7 +565,7 @@ describe('AIIntegration', () => {
 
       // Verify correct tools were used
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        expectedClaudeCommand,
         expect.arrayContaining([
           '--allowedTools',
           'Read',

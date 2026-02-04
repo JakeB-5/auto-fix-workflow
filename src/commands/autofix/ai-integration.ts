@@ -127,10 +127,15 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
   args.push(prompt);
 
   return new Promise((resolve) => {
-    const claude = spawn('claude', args, {
+    // Use shell: false to avoid DEP0190 warning
+    // On Windows, need to call claude.cmd directly when shell is false
+    const command = process.platform === 'win32' ? 'claude.cmd' : 'claude';
+    const claude = spawn(command, args, {
       cwd: workingDir || process.cwd(),
       env: { ...process.env },
-      shell: true,
+      shell: false,
+      // On Windows, hide the console window
+      windowsHide: true,
     });
 
     let stdout = '';

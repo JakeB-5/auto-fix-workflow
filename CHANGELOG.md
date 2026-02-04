@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-02-04
+
+### Fixed
+
+- **Node.js DEP0190 Warning**: Resolved deprecation warning when invoking Claude CLI
+  - Changed from `shell: true` to `shell: false` with explicit `.cmd` extension on Windows
+  - Eliminates "Passing args to a child process with shell option true can lead to security vulnerabilities" warning
+
+### Note
+
+- **npm deprecated warnings**: Warnings about `inflight`, `glob`, `formidable`, `superagent` are from the `asana@3.0.0` package dependencies and cannot be fixed directly. Waiting for Asana SDK update.
+
 ## [0.4.5] - 2026-02-04
 
 ### Fixed
@@ -284,6 +296,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.6]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.2...v0.4.3
