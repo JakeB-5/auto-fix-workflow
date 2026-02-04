@@ -186,7 +186,7 @@ export class AsanaListTool {
   async findSectionByName(
     projectGid: string,
     sectionName: string
-  ): Promise<Result<{ gid: string; name: string } | null, Error>> {
+  ): Promise<Result<string | null, Error>> {
     const sectionsResult = await this.getSections(projectGid);
     if (isFailure(sectionsResult)) {
       return err(sectionsResult.error);
@@ -196,7 +196,45 @@ export class AsanaListTool {
       (s) => s.name.toLowerCase() === sectionName.toLowerCase()
     );
 
-    return ok(section ?? null);
+    return ok(section?.gid ?? null);
+  }
+
+  /**
+   * Get a single task by GID
+   */
+  async getTask(taskGid: string): Promise<Result<AsanaTask, Error>> {
+    try {
+      const result = await this.client.callTool({
+        name: 'asana_get_task',
+        arguments: {
+          task: taskGid,
+          opt_fields: DEFAULT_OPT_FIELDS.join(','),
+        },
+      });
+
+      if (!result.content || !Array.isArray(result.content)) {
+        return err(new Error('Invalid response from Asana MCP tool'));
+      }
+
+      const textContent = result.content.find(
+        (c): c is { type: 'text'; text: string } => c.type === 'text'
+      );
+
+      if (!textContent) {
+        return err(new Error('No text content in Asana MCP response'));
+      }
+
+      const rawTask = JSON.parse(textContent.text);
+      const task = this.mapToAsanaTask(rawTask);
+
+      return ok(task);
+    } catch (error) {
+      return err(
+        error instanceof Error
+          ? error
+          : new Error(`Failed to get Asana task: ${String(error)}`)
+      );
+    }
   }
 
   /**

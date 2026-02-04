@@ -266,7 +266,7 @@ export class TaskProcessor {
       return ok(undefined);
     }
 
-    return ok(sectionResult.data?.gid);
+    return ok(sectionResult.data ?? undefined);
   }
 
   /**
@@ -337,7 +337,7 @@ export async function fetchAndProcessTasks(
     return err(sectionResult.error);
   }
 
-  const sectionGid = sectionResult.data?.gid ?? options.sectionId;
+  const sectionGid = sectionResult.data ?? options.sectionId;
 
   if (!sectionGid) {
     return err(

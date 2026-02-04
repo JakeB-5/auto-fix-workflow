@@ -10,6 +10,7 @@ import { ok, err, isFailure } from '../../common/types/result.js';
 import type { AIAnalysisResult, AIFixResult } from './types.js';
 import { buildAnalysisPrompt, buildFixPrompt } from './prompts.js';
 import { createBudgetTrackerFromAI, type BudgetTracker } from './budget.js';
+import type { AsanaTask, TaskAnalysis } from '../triage/types.js';
 
 /**
  * AI integration error
@@ -466,6 +467,122 @@ export class AIIntegration {
     };
 
     return this.analyzeGroup(stubGroup, worktreePath);
+  }
+
+  /**
+   * Analyze an Asana task for triage
+   *
+   * Used by triage command in standalone CLI mode.
+   */
+  async analyzeAsanaTask(task: AsanaTask): Promise<Result<TaskAnalysis, AIError>> {
+    const prompt = this.buildTaskAnalysisPrompt(task);
+
+    const result = await safeInvokeClaude({
+      prompt,
+      model: 'haiku', // Fast model for triage
+      timeout: 30000, // 30 seconds
+    });
+
+    if (isFailure(result)) {
+      // Fallback to heuristic analysis
+      return ok(this.getFallbackTaskAnalysis(task));
+    }
+
+    const claudeResult = result.data;
+
+    // Track cost if available
+    if (claudeResult.usage) {
+      this.budgetTracker.addCost(`triage-${task.gid}`, claudeResult.usage.cost);
+    }
+
+    // Parse response
+    try {
+      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"issueType"[\s\S]*?\}/);
+      if (!jsonMatch) {
+        return ok(this.getFallbackTaskAnalysis(task));
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]) as TaskAnalysis;
+      return ok(parsed);
+    } catch {
+      return ok(this.getFallbackTaskAnalysis(task));
+    }
+  }
+
+  /**
+   * Build prompt for task analysis
+   */
+  private buildTaskAnalysisPrompt(task: AsanaTask): string {
+    return `Analyze this Asana task and classify it for GitHub issue creation.
+
+Task Name: ${task.name}
+Description: ${task.notes || '(no description)'}
+Tags: ${task.tags?.map(t => t.name).join(', ') || '(none)'}
+Custom Fields: ${task.customFields?.map(f => `${f.name}: ${f.displayValue || f.textValue || f.enumValue?.name || ''}`).join(', ') || '(none)'}
+
+Respond in JSON format:
+{
+  "issueType": "bug" | "feature" | "refactor" | "docs" | "test" | "chore",
+  "priority": "critical" | "high" | "medium" | "low",
+  "labels": ["label1", "label2"],
+  "component": "component-name",
+  "relatedFiles": ["path/to/file.ts"],
+  "summary": "Brief summary for GitHub issue body",
+  "acceptanceCriteria": ["criterion 1", "criterion 2"],
+  "confidence": 0.0-1.0
+}`;
+  }
+
+  /**
+   * Fallback heuristic analysis when Claude CLI is unavailable
+   */
+  private getFallbackTaskAnalysis(task: AsanaTask): TaskAnalysis {
+    const name = task.name.toLowerCase();
+
+    // Simple heuristic classification
+    let issueType: TaskAnalysis['issueType'] = 'chore';
+    if (name.includes('bug') || name.includes('fix') || name.includes('error')) {
+      issueType = 'bug';
+    } else if (name.includes('feat') || name.includes('add') || name.includes('implement')) {
+      issueType = 'feature';
+    } else if (name.includes('refactor') || name.includes('clean')) {
+      issueType = 'refactor';
+    } else if (name.includes('doc') || name.includes('readme')) {
+      issueType = 'docs';
+    } else if (name.includes('test')) {
+      issueType = 'test';
+    }
+
+    // Extract priority from custom fields if available
+    const priorityField = task.customFields?.find(f =>
+      f.name.toLowerCase().includes('priority')
+    );
+    let priority: TaskAnalysis['priority'] = 'medium';
+    if (priorityField?.enumValue?.name) {
+      const pName = priorityField.enumValue.name.toLowerCase();
+      if (pName.includes('critical') || pName.includes('urgent')) priority = 'critical';
+      else if (pName.includes('high')) priority = 'high';
+      else if (pName.includes('low')) priority = 'low';
+    }
+
+    // Extract component from custom fields
+    const componentField = task.customFields?.find(f =>
+      f.name.toLowerCase().includes('component')
+    );
+    const component = componentField?.enumValue?.name ||
+                      componentField?.textValue ||
+                      'general';
+
+    return {
+      issueType,
+      priority,
+      labels: [issueType, `priority:${priority}`],
+      component,
+      relatedFiles: [],
+      summary: task.notes?.slice(0, 500) || task.name,
+      acceptanceCriteria: [],
+      confidence: 0.3, // Low confidence for heuristic
+    };
   }
 
   /**

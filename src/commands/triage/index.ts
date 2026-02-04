@@ -119,7 +119,7 @@ async function runInteractiveMode(
     return err(sectionResult.error);
   }
 
-  const sectionGid = sectionResult.data?.gid ?? options.sectionId;
+  const sectionGid = sectionResult.data ?? options.sectionId;
 
   if (!sectionGid) {
     return err(
@@ -197,7 +197,7 @@ async function runBatchMode(
     return err(sectionResult.error);
   }
 
-  const sectionGid = sectionResult.data?.gid ?? options.sectionId;
+  const sectionGid = sectionResult.data ?? options.sectionId;
 
   if (!sectionGid) {
     return err(

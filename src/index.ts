@@ -441,6 +441,8 @@ USAGE:
 
 COMMANDS:
   init              Initialize configuration files
+  autofix           Run autofix workflow on GitHub issues
+  triage            Triage Asana tasks and create GitHub issues
   help              Show this help message
 
 MCP SERVER MODE:
@@ -463,6 +465,7 @@ AVAILABLE MCP TOOLS:
 
 EXAMPLES:
   npx auto-fix-workflow init              # Initialize config
+  npx auto-fix-workflow autofix           # Run autofix workflow
   npx auto-fix-workflow help              # Show this help
 
 CONFIGURATION:
@@ -513,8 +516,24 @@ if (command === 'init') {
   process.exit(0);
 } else if (command === '--version' || command === '-v') {
   // Show version
-  console.log('auto-fix-workflow v0.3.6');
+  console.log('auto-fix-workflow v0.3.8');
   process.exit(0);
+} else if (command === 'autofix') {
+  // Run autofix command
+  import('./commands/autofix/index.js').then(({ main }) => {
+    main(args.slice(1)).catch((error: unknown) => {
+      console.error('Autofix failed:', error);
+      process.exit(1);
+    });
+  });
+} else if (command === 'triage') {
+  // Run triage command in standalone mode
+  import('./commands/triage/cli-entry.js').then(({ main }) => {
+    main(args.slice(1)).catch((error: unknown) => {
+      console.error('Triage failed:', error);
+      process.exit(1);
+    });
+  });
 } else if (isInteractiveCLI() && !command) {
   // Running in terminal without command - show help instead of hanging
   console.log('auto-fix-workflow: Running in interactive mode without MCP client.\n');
