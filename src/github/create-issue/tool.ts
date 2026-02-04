@@ -32,6 +32,8 @@ export const CreateIssueInputSchema = z.object({
   milestone: z.number().optional().describe('Milestone number'),
   checkDuplicates: z.boolean().optional().default(true).describe('Check for duplicate issues'),
   autoInferLabels: z.boolean().optional().default(true).describe('Automatically infer labels'),
+  source: z.enum(['asana', 'sentry', 'manual']).optional().describe('Issue source for automatic label application'),
+  useAutoFixLabels: z.boolean().optional().default(true).describe('Apply auto-fix workflow labels from config'),
 });
 
 export type CreateIssueInput = z.infer<typeof CreateIssueInputSchema>;
@@ -103,10 +105,28 @@ Example usage:
         description: 'Automatically infer labels',
         default: true,
       },
+      source: {
+        type: 'string',
+        enum: ['asana', 'sentry', 'manual'],
+        description: 'Issue source - automatically applies appropriate labels (e.g., "asana" adds source:asana label)',
+      },
+      useAutoFixLabels: {
+        type: 'boolean',
+        description: 'Apply auto-fix workflow labels (auto-fix, auto-fix-processing) from config',
+        default: true,
+      },
     },
     required: ['owner', 'repo', 'title', 'body'],
   },
 };
+
+/** Auto-fix workflow label configuration */
+export interface AutoFixLabelConfig {
+  readonly autoFix?: string;
+  readonly skip?: string;
+  readonly failed?: string;
+  readonly processing?: string;
+}
 
 /**
  * Handler for the create-issue tool
@@ -114,6 +134,7 @@ Example usage:
  * @param input - Tool input parameters
  * @param token - GitHub authentication token
  * @param asanaConfig - Optional Asana configuration for linking
+ * @param labelConfig - Optional auto-fix label configuration
  * @returns Result containing the created issue or error
  */
 export async function handleCreateIssueTool(
@@ -124,7 +145,8 @@ export async function handleCreateIssueTool(
     readonly workspaceGid: string;
     readonly projectGids: readonly string[];
     readonly syncedTag?: string;
-  }
+  },
+  labelConfig?: AutoFixLabelConfig
 ): Promise<Result<Issue, GitHubApiError>> {
   // Validate input
   const validationResult = CreateIssueInputSchema.safeParse(input);
@@ -138,12 +160,33 @@ export async function handleCreateIssueTool(
     };
   }
 
+  // Build labels array with automatic additions
+  let labels = [...(input.labels ?? [])];
+
+  // Add source-based label
+  if (input.source) {
+    labels.push(`source:${input.source}`);
+  }
+
+  // Add auto-fix workflow labels from config
+  if (input.useAutoFixLabels !== false && labelConfig) {
+    if (labelConfig.autoFix) {
+      labels.push(labelConfig.autoFix);
+    }
+    if (labelConfig.processing) {
+      labels.push(labelConfig.processing);
+    }
+  }
+
+  // Deduplicate labels
+  labels = [...new Set(labels)];
+
   const params: CreateIssueParams = {
     owner: input.owner,
     repo: input.repo,
     title: input.title,
     body: input.body,
-    labels: input.labels,
+    labels,
     assignees: input.assignees,
     milestone: input.milestone,
   };

@@ -4,6 +4,20 @@
  */
 
 /**
+ * GitHub 라벨 설정
+ */
+export interface GitHubLabelsConfig {
+  /** auto-fix 대상 라벨 */
+  readonly autoFix?: string;
+  /** auto-fix 제외 라벨 */
+  readonly skip?: string;
+  /** auto-fix 실패 라벨 */
+  readonly failed?: string;
+  /** auto-fix 처리 중 라벨 */
+  readonly processing?: string;
+}
+
+/**
  * GitHub 설정
  */
 export interface GitHubConfig {
@@ -17,10 +31,12 @@ export interface GitHubConfig {
   readonly apiBaseUrl?: string;
   /** 기본 브랜치 (기본값: main) */
   readonly defaultBranch?: string;
-  /** auto-fix 대상 라벨 (기본값: auto-fix) */
+  /** auto-fix 대상 라벨 (기본값: auto-fix) - deprecated, use labels.autoFix */
   readonly autoFixLabel?: string;
-  /** auto-fix 제외 라벨 (기본값: auto-fix-skip) */
+  /** auto-fix 제외 라벨 (기본값: auto-fix-skip) - deprecated, use labels.skip */
   readonly skipLabel?: string;
+  /** 라벨 설정 */
+  readonly labels?: GitHubLabelsConfig;
 }
 
 /**

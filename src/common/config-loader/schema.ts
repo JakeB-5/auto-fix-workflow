@@ -6,6 +6,16 @@
 import { z } from 'zod';
 
 /**
+ * GitHub labels configuration schema
+ */
+export const GitHubLabelsSchema = z.object({
+  autoFix: z.string().optional().describe('Label for auto-fix issues'),
+  skip: z.string().optional().describe('Label to skip auto-fix'),
+  failed: z.string().optional().describe('Label for failed auto-fix'),
+  processing: z.string().optional().describe('Label for in-progress auto-fix'),
+}).optional();
+
+/**
  * GitHub configuration schema
  */
 export const GitHubConfigSchema = z.object({
@@ -16,6 +26,7 @@ export const GitHubConfigSchema = z.object({
   defaultBranch: z.string().optional(),
   autoFixLabel: z.string().optional(),
   skipLabel: z.string().optional(),
+  labels: GitHubLabelsSchema,
 });
 
 /**
