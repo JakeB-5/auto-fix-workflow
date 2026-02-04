@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-02-04
+
+### Fixed
+
+- **Triage Tag Handling**: Fixed `Cannot read properties of undefined (reading 'toLowerCase')` error when task tags have undefined names
+- **Synced Tag Addition**: Now properly adds "synced" tag to Asana tasks after creating GitHub issues
+- **Null-safe Tag Mapping**: Tag names are now defaulted to empty string when undefined in Asana API responses
+
+### Added
+
+- **findTagByName API**: Added `findTagByName` method to AsanaToolset for looking up tag GIDs by name
+
 ## [0.4.2] - 2026-02-04
 
 ### Fixed
@@ -248,6 +260,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.3]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.3.7...v0.4.0

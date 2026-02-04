@@ -83,6 +83,8 @@ async function createMCPToolset(client: Client, owner: string, repo: string): Pr
         return result;
       },
       findSectionByName: asanaList.findSectionByName.bind(asanaList),
+      // MCP mode doesn't have tag lookup - return null
+      findTagByName: async () => ok(null),
     },
     github: {
       // Wrap createIssue to use the owner/repo from context (params are ignored)

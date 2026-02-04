@@ -34,6 +34,7 @@ export interface AsanaToolset {
   getTask(taskGid: string): Promise<Result<AsanaTask, Error>>;
   updateTask(params: AsanaTaskUpdateParams): Promise<Result<void, Error>>;
   findSectionByName(projectGid: string, sectionName: string): Promise<Result<string | null, Error>>;
+  findTagByName(tagName: string): Promise<Result<string | null, Error>>;
 }
 
 /**

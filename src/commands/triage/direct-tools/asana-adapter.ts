@@ -14,6 +14,7 @@ import { executeListTasks as apiListTasks } from '../../../asana/list-tasks/inde
 import { executeGetTask as apiGetTask } from '../../../asana/get-task/index.js';
 import { executeUpdateTask as apiUpdateTask } from '../../../asana/update-task/index.js';
 import { getAsanaClient, getSectionGidByName } from '../../../asana/list-tasks/index.js';
+import { getTagGidByName } from '../../../asana/update-task/tag-cache.js';
 
 /**
  * Asana direct adapter
@@ -61,7 +62,7 @@ export class AsanaDirectAdapter implements AsanaToolset {
             textValue: f.text_value || f.textValue,
             numberValue: f.number_value || f.numberValue,
           })) || t.customFields,
-          tags: t.tags?.map((tag: any) => ({ gid: tag.gid, name: tag.name })),
+          tags: t.tags?.map((tag: any) => ({ gid: tag.gid || '', name: tag.name || '' })),
           memberships: t.memberships,
           createdAt: t.created_at || t.createdAt,
           modifiedAt: t.modified_at || t.modifiedAt,
@@ -111,7 +112,7 @@ export class AsanaDirectAdapter implements AsanaToolset {
             textValue: f.text_value || f.textValue,
             numberValue: f.number_value || f.numberValue,
           })) || t.customFields,
-          tags: t.tags?.map((tag: any) => ({ gid: tag.gid, name: tag.name })),
+          tags: t.tags?.map((tag: any) => ({ gid: tag.gid || '', name: tag.name || '' })),
           memberships: t.memberships,
           createdAt: t.created_at || t.createdAt,
           modifiedAt: t.modified_at || t.modifiedAt,
@@ -156,6 +157,15 @@ export class AsanaDirectAdapter implements AsanaToolset {
       const client = getAsanaClient(this.config);
       const sectionGid = await getSectionGidByName(client, projectGid, sectionName);
       return ok(sectionGid);
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  async findTagByName(tagName: string): Promise<Result<string | null, Error>> {
+    try {
+      const tagGid = await getTagGidByName(this.config, tagName);
+      return ok(tagGid);
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }

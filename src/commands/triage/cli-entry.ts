@@ -63,11 +63,15 @@ async function processTasks(
     ? processedSectionResult.data
     : null;
 
+  // Get synced tag GID
+  const syncedTagResult = await toolset.asana.findTagByName(triageConfig.syncedTagName);
+  const syncedTagGid = isSuccess(syncedTagResult) ? syncedTagResult.data : null;
+
   for (const task of tasks) {
     try {
-      // Check if already synced
+      // Check if already synced (null-safe)
       const alreadySynced = task.tags?.some(
-        (t) => t.name.toLowerCase() === triageConfig.syncedTagName.toLowerCase()
+        (t) => (t.name || '').toLowerCase() === triageConfig.syncedTagName.toLowerCase()
       );
 
       if (alreadySynced) {
@@ -137,11 +141,12 @@ async function processTasks(
       };
       createdIssues.push(issueInfo);
 
-      // Update Asana task (best effort)
-      if (processedSectionGid) {
+      // Update Asana task (best effort - move to processed section and add synced tag)
+      if (processedSectionGid || syncedTagGid) {
         await toolset.asana.updateTask({
           taskGid: task.gid,
-          sectionGid: processedSectionGid,
+          sectionGid: processedSectionGid || undefined,
+          addTags: syncedTagGid ? [syncedTagGid] : undefined,
           appendNotes: `GitHub issue created: ${issue.url}`,
         });
       }
