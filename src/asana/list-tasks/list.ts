@@ -34,6 +34,8 @@ export interface ListTasksOptions {
   readonly projectGid: string;
   /** Section name to filter by (optional) */
   readonly sectionName?: string;
+  /** Section GID to filter by directly (optional, takes precedence over sectionName) */
+  readonly sectionGid?: string;
   /** Include completed tasks (default: false) */
   readonly includeCompleted?: boolean;
   /** Maximum number of tasks to return */
@@ -83,9 +85,9 @@ export async function listTasks(
 ): Promise<ListTasksResult> {
   const client = getAsanaClient(config);
 
-  // If section name provided, get section GID first
-  let sectionGid: string | undefined;
-  if (options.sectionName) {
+  // Use sectionGid directly if provided, otherwise lookup by name
+  let sectionGid: string | undefined = options.sectionGid;
+  if (!sectionGid && options.sectionName) {
     const gid = await getSectionGidByName(
       client,
       options.projectGid,

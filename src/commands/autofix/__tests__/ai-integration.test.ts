@@ -252,7 +252,7 @@ describe('AIIntegration', () => {
           '--dangerously-skip-permissions',
           '--print',
           '--output-format',
-          'json',
+          'stream-json',  // Changed from 'json' to enable real-time output
           '--model',
           'opus',
           '--allowedTools',

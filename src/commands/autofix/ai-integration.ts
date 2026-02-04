@@ -63,6 +63,8 @@ export interface ClaudeOptions {
   workingDir?: string;
   /** Timeout in milliseconds */
   timeout?: number;
+  /** Stream output to stderr in real-time (default: true) */
+  streamOutput?: boolean;
 }
 
 /**
@@ -103,13 +105,15 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     maxBudget,
     workingDir,
     timeout = 120000, // 2 minutes default
+    streamOutput = true, // Default to streaming
   } = options;
 
   // Build command arguments
+  // Use stream-json for real-time output visibility
   const args: string[] = [
     '--dangerously-skip-permissions',
     '--print',
-    '--output-format', 'json',
+    '--output-format', streamOutput ? 'stream-json' : 'json',
   ];
 
   if (model) {
@@ -141,6 +145,7 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     let stdout = '';
     let stderr = '';
     let timedOut = false;
+    let finalResult = ''; // Accumulate the final result text
 
     // Setup timeout
     const timeoutHandle = setTimeout(() => {
@@ -149,7 +154,38 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     }, timeout);
 
     claude.stdout?.on('data', (data) => {
-      stdout += data.toString();
+      const chunk = data.toString();
+      stdout += chunk;
+
+      // Parse stream-json format and display in real-time
+      if (streamOutput) {
+        // Each line in stream-json is a JSON object
+        const lines = chunk.split('\n').filter((line: string) => line.trim());
+        for (const line of lines) {
+          try {
+            const event = JSON.parse(line);
+            // Handle different event types from Claude CLI stream-json
+            if (event.type === 'assistant' && event.message?.content) {
+              // Assistant message with content blocks
+              for (const block of event.message.content) {
+                if (block.type === 'text' && block.text) {
+                  process.stderr.write(block.text);
+                  finalResult += block.text;
+                }
+              }
+            } else if (event.type === 'content_block_delta' && event.delta?.text) {
+              // Streaming text delta
+              process.stderr.write(event.delta.text);
+              finalResult += event.delta.text;
+            } else if (event.type === 'result' && event.result) {
+              // Final result
+              finalResult = event.result;
+            }
+          } catch {
+            // Not valid JSON, ignore (might be partial line)
+          }
+        }
+      }
     });
 
     claude.stderr?.on('data', (data) => {
@@ -158,6 +194,11 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
 
     claude.on('close', (code) => {
       clearTimeout(timeoutHandle);
+
+      // Add newline after streaming output
+      if (streamOutput && finalResult) {
+        process.stderr.write('\n');
+      }
 
       if (timedOut) {
         resolve(err({
@@ -168,9 +209,11 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
       }
 
       const exitCode = code ?? 1;
+      // Use finalResult for stream mode, raw stdout for json mode
+      const outputText = streamOutput ? finalResult : stdout;
       const result: ClaudeResult = {
         success: exitCode === 0,
-        output: stdout,
+        output: outputText || stdout,
         exitCode,
         error: stderr || undefined,
       };

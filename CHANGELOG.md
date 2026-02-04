@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-02-04
+
+### Fixed
+
+- **Section Filtering**: Fixed triage command processing all tasks instead of only "To Triage" section
+  - `listTasks` now accepts `sectionGid` directly (not just `sectionName`)
+  - `AsanaDirectAdapter` passes section GID correctly to filter tasks by section
+
+### Improved
+
+- **Real-time Claude Output**: Claude CLI now uses `stream-json` format for real-time output visibility
+  - Shows Claude's thinking and responses as they stream
+  - Helps users see progress during long-running AI analysis
+
 ## [0.4.6] - 2026-02-04
 
 ### Fixed
@@ -296,6 +310,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.7]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.3...v0.4.4

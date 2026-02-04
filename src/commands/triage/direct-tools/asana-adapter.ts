@@ -26,53 +26,44 @@ export class AsanaDirectAdapter implements AsanaToolset {
 
   async listTasks(params: ListTasksParams): Promise<Result<AsanaTask[], Error>> {
     try {
-      // Build input matching ListTasksInput schema
-      const result = await apiListTasks(this.config, {
+      // Import listTasks directly to use sectionGid option
+      const { listTasks: directListTasks } = await import('../../../asana/list-tasks/list.js');
+
+      // Use direct API call with sectionGid support
+      const listResult = await directListTasks(this.config, {
         projectGid: params.projectGid,
-        sectionName: params.sectionGid, // API uses sectionName, not sectionGid
+        sectionGid: params.sectionGid, // Pass GID directly
         limit: params.limit,
         includeCompleted: false,
-        sortOrder: 'desc',
-        format: 'json',
-        includeSummary: false,
-        fetchAll: false,
       });
 
-      if (isSuccess(result)) {
-        // Parse the content string to extract tasks
-        // The API returns { content: string } format
-        const content = result.data.content;
-        const parsed = JSON.parse(content);
+      // directListTasks returns { tasks: TaskListItem[], ... } directly (not Result)
+      // Map to AsanaTask format
+      const tasks: AsanaTask[] = listResult.tasks.map((t: any) => ({
+        gid: t.gid,
+        name: t.name,
+        notes: t.notes || '',
+        permalinkUrl: t.permalink || t.permalink_url || t.permalinkUrl || '',
+        dueOn: t.dueOn || t.due_on,
+        dueAt: t.dueAt || t.due_at,
+        assignee: t.assignee,
+        customFields: t.customFields?.map((f: any) => ({
+          gid: f.gid,
+          name: f.name,
+          displayValue: f.displayValue || f.display_value,
+          type: f.type,
+          enumValue: f.enumValue || f.enum_value,
+          textValue: f.textValue || f.text_value,
+          numberValue: f.numberValue || f.number_value,
+        })),
+        tags: t.tags?.map((tag: any) => ({ gid: tag.gid || '', name: tag.name || '' })),
+        memberships: t.memberships,
+        createdAt: t.createdAt || t.created_at,
+        modifiedAt: t.modifiedAt || t.modified_at,
+        completed: t.completed,
+      }));
 
-        // Map to AsanaTask format
-        const tasks: AsanaTask[] = (parsed.tasks || parsed.data || []).map((t: any) => ({
-          gid: t.gid,
-          name: t.name,
-          notes: t.notes || '',
-          permalinkUrl: t.permalink_url || t.permalinkUrl || '',
-          dueOn: t.due_on || t.dueOn,
-          dueAt: t.due_at || t.dueAt,
-          assignee: t.assignee,
-          customFields: t.custom_fields?.map((f: any) => ({
-            gid: f.gid,
-            name: f.name,
-            displayValue: f.display_value || f.displayValue,
-            type: f.type,
-            enumValue: f.enum_value || f.enumValue,
-            textValue: f.text_value || f.textValue,
-            numberValue: f.number_value || f.numberValue,
-          })) || t.customFields,
-          tags: t.tags?.map((tag: any) => ({ gid: tag.gid || '', name: tag.name || '' })),
-          memberships: t.memberships,
-          createdAt: t.created_at || t.createdAt,
-          modifiedAt: t.modified_at || t.modifiedAt,
-          completed: t.completed,
-        }));
-
-        return ok(tasks);
-      }
-
-      return err(new Error(result.error?.message || 'Failed to list tasks'));
+      return ok(tasks);
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }
