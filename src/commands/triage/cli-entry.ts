@@ -21,6 +21,104 @@ import type { TriageToolset } from './toolset.types.js';
 import { DryRunSimulator, formatDryRunResult, toTriageResult } from './dry-run.js';
 
 /**
+ * Map issue type to emoji prefix (aligned with ISSUE_TEMPLATE)
+ */
+function getTypeEmoji(issueType: string): string {
+  const emojiMap: Record<string, string> = {
+    bug: '🐛',
+    feature: '✨',
+    refactor: '🔧',
+    error: '🔴',
+    sentry: '🔴',
+    docs: '📝',
+    chore: '⚙️',
+  };
+  return emojiMap[issueType.toLowerCase()] || '📋';
+}
+
+/**
+ * Build issue body following .github/ISSUE_TEMPLATE/auto-fix-issue.yml format
+ *
+ * Template sections:
+ * - Type (added as label/prefix)
+ * - Source
+ * - Context
+ * - Problem Description
+ * - Code Analysis (optional)
+ * - Suggested Fix (optional)
+ * - Acceptance Criteria
+ */
+function buildIssueBodyFromTemplate(task: AsanaTask, analysis: import('./types.js').TaskAnalysis): string {
+  const sections: string[] = [];
+
+  // Type section (as heading with emoji)
+  sections.push(`### ${getTypeEmoji(analysis.issueType)} Type: ${analysis.issueType}`);
+  sections.push('');
+
+  // Source section
+  sections.push('### Source');
+  sections.push('');
+  sections.push(`Asana Task: ${task.permalinkUrl}`);
+  sections.push('');
+
+  // Context section
+  sections.push('### Context');
+  sections.push('');
+  sections.push(`- **Component**: ${analysis.component || 'Unknown'}`);
+  sections.push(`- **Priority**: ${analysis.priority}`);
+  sections.push(`- **Confidence**: ${Math.round(analysis.confidence * 100)}%`);
+  if (analysis.relatedFiles.length > 0) {
+    sections.push(`- **Related files**: ${analysis.relatedFiles.map(f => `\`${f}\``).join(', ')}`);
+  }
+  sections.push('');
+
+  // Problem Description section
+  sections.push('### Problem Description');
+  sections.push('');
+  sections.push(analysis.summary || task.notes || 'No description provided.');
+  sections.push('');
+
+  // Code Analysis section (if root cause or affected files available)
+  if (analysis.relatedFiles.length > 0 || analysis.component) {
+    sections.push('### Code Analysis');
+    sections.push('');
+    if (analysis.component) {
+      sections.push(`- **Root cause**: Issue in ${analysis.component} component`);
+    }
+    if (analysis.relatedFiles.length > 0) {
+      sections.push('- **Affected files**:');
+      for (const file of analysis.relatedFiles) {
+        sections.push(`  - \`${file}\``);
+      }
+    }
+    sections.push('');
+  }
+
+  // Acceptance Criteria section
+  if (analysis.acceptanceCriteria.length > 0) {
+    sections.push('### Acceptance Criteria');
+    sections.push('');
+    for (const criterion of analysis.acceptanceCriteria) {
+      sections.push(`- [ ] ${criterion}`);
+    }
+    sections.push('');
+  }
+
+  // Original notes (if different from summary)
+  if (task.notes && task.notes !== analysis.summary) {
+    sections.push('<details>');
+    sections.push('<summary>Original Asana Task Description</summary>');
+    sections.push('');
+    sections.push(task.notes);
+    sections.push('');
+    sections.push('</details>');
+    sections.push('');
+  }
+
+  return sections.join('\n');
+}
+
+/**
  * Process tasks using the TriageToolset
  */
 async function processTasks(
@@ -99,16 +197,9 @@ async function processTasks(
 
       const analysis = analysisResult.data;
 
-      // Build issue title and body from analysis
+      // Build issue title and body from analysis (aligned with .github/ISSUE_TEMPLATE/auto-fix-issue.yml)
       const issueTitle = `[${analysis.issueType}] ${task.name}`;
-      const issueBody = `## Summary\n\n${analysis.summary}\n\n` +
-        `## Source\n\nAsana task: ${task.permalinkUrl}\n\n` +
-        (analysis.acceptanceCriteria.length > 0
-          ? `## Acceptance Criteria\n\n${analysis.acceptanceCriteria.map(c => `- ${c}`).join('\n')}\n\n`
-          : '') +
-        (analysis.relatedFiles.length > 0
-          ? `## Related Files\n\n${analysis.relatedFiles.map(f => `- \`${f}\``).join('\n')}\n`
-          : '');
+      const issueBody = buildIssueBodyFromTemplate(task, analysis);
 
       // Create GitHub issue
       console.log(`${progress} Creating GitHub issue...`);

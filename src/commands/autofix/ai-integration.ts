@@ -128,7 +128,9 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     args.push('--max-budget-usd', maxBudget.toString());
   }
 
-  args.push(prompt);
+  // Pass prompt via stdin to avoid EINVAL errors with special characters on Windows
+  // Using '-' as argument tells Claude CLI to read prompt from stdin
+  args.push('-');
 
   return new Promise((resolve) => {
     // Use shell: false to avoid DEP0190 warning
@@ -141,6 +143,12 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
       // On Windows, hide the console window
       windowsHide: true,
     });
+
+    // Write prompt to stdin and close it
+    if (claude.stdin) {
+      claude.stdin.write(prompt);
+      claude.stdin.end();
+    }
 
     let stdout = '';
     let stderr = '';

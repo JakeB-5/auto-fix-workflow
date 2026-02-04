@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-02-04
+
+### Fixed
+
+- **Claude CLI spawn EINVAL**: Fixed Windows spawn error when invoking Claude CLI
+  - Changed from passing prompt as command-line argument to using stdin
+  - Resolves `spawn EINVAL` error caused by special characters in Korean text
+
+### Improved
+
+- **GitHub Issue Body Format**: Aligned generated issue body with `.github/ISSUE_TEMPLATE/auto-fix-issue.yml` format
+  - Added structured sections: Type, Source, Context, Problem Description, Code Analysis, Acceptance Criteria
+  - Type section includes emoji prefix matching template options
+
 ## [0.4.7] - 2026-02-04
 
 ### Fixed
@@ -310,6 +324,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.8]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.4...v0.4.5

@@ -82,6 +82,11 @@ function createMockChildProcess(): ChildProcess & EventEmitter {
   const proc = new EventEmitter() as ChildProcess & EventEmitter;
   proc.stdout = new EventEmitter() as any;
   proc.stderr = new EventEmitter() as any;
+  // Mock stdin for prompt input
+  proc.stdin = {
+    write: vi.fn(),
+    end: vi.fn(),
+  } as any;
   proc.kill = vi.fn();
   return proc;
 }
@@ -258,7 +263,7 @@ describe('AIIntegration', () => {
           '--allowedTools',
           'Read',
           'Grep',
-          'Test prompt',
+          '-',  // Prompt is passed via stdin to avoid EINVAL errors on Windows
         ]),
         expect.objectContaining({
           cwd: '/test/path',
