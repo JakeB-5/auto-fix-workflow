@@ -67,7 +67,11 @@ async function processTasks(
   const syncedTagResult = await toolset.asana.findTagByName(triageConfig.syncedTagName);
   const syncedTagGid = isSuccess(syncedTagResult) ? syncedTagResult.data : null;
 
+  let taskIndex = 0;
   for (const task of tasks) {
+    taskIndex++;
+    const progress = `[${taskIndex}/${tasks.length}]`;
+
     try {
       // Check if already synced (null-safe)
       const alreadySynced = task.tags?.some(
@@ -75,17 +79,13 @@ async function processTasks(
       );
 
       if (alreadySynced) {
-        if (options.verbose) {
-          console.log(`  Skipped: ${task.name} (already synced)`);
-        }
+        console.log(`${progress} SKIP: ${task.name} (already synced)`);
         skipped++;
         continue;
       }
 
       // Analyze task
-      if (options.verbose) {
-        console.log(`  Analyzing: ${task.name}`);
-      }
+      console.log(`${progress} Processing: ${task.name}`);
       const analysisResult = await toolset.analyzer.analyzeTask(task);
       if (isFailure(analysisResult)) {
         failures.push({
@@ -111,9 +111,7 @@ async function processTasks(
           : '');
 
       // Create GitHub issue
-      if (options.verbose) {
-        console.log(`  Creating issue: ${issueTitle}`);
-      }
+      console.log(`${progress} Creating GitHub issue...`);
       const issueResult = await toolset.github.createIssue({
         title: issueTitle,
         body: issueBody,
@@ -133,6 +131,8 @@ async function processTasks(
       }
 
       const issue = issueResult.data;
+      console.log(`${progress} Created: #${issue.number} - ${issue.url}`);
+
       const issueInfo: CreatedIssueInfo = {
         asanaTaskGid: task.gid,
         githubIssueNumber: issue.number,
@@ -142,6 +142,7 @@ async function processTasks(
       createdIssues.push(issueInfo);
 
       // Update Asana task (best effort - move to processed section and add synced tag)
+      console.log(`${progress} Updating Asana task...`);
       if (processedSectionGid || syncedTagGid) {
         await toolset.asana.updateTask({
           taskGid: task.gid,
@@ -336,7 +337,7 @@ export async function main(argv: string[] = []): Promise<void> {
       process.exit(0);
     }
 
-    console.log(`Found ${tasks.length} task(s) to process.`);
+    console.log(`Found ${tasks.length} task(s) to process.\n`);
 
     // Process tasks
     const result = await processTasks(toolset, tasks, triageConfig, options, projectGid, owner, repo);

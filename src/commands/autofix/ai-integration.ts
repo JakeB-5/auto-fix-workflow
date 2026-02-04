@@ -477,11 +477,19 @@ export class AIIntegration {
   async analyzeAsanaTask(task: AsanaTask): Promise<Result<TaskAnalysis, AIError>> {
     const prompt = this.buildTaskAnalysisPrompt(task);
 
+    // Use configured model or default to opus (per spec REQ-AI-002)
+    const model = this.config.preferredModel || 'opus';
+
+    // Show progress indicator
+    process.stderr.write(`[AI] Analyzing task with ${model}...`);
+
     const result = await safeInvokeClaude({
       prompt,
-      model: 'haiku', // Fast model for triage
-      timeout: 30000, // 30 seconds
+      model,
+      timeout: 300000, // 5 minutes default (per spec REQ-AI-005)
     });
+
+    process.stderr.write(' done\n');
 
     if (isFailure(result)) {
       // Fallback to heuristic analysis

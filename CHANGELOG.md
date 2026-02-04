@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-02-04
+
+### Fixed
+
+- **AI Model Selection**: Use `opus` as default model per spec REQ-AI-002 (was incorrectly using `haiku`)
+- **Analysis Timeout**: Use 5 minute timeout per spec REQ-AI-005 (was 30 seconds)
+
+### Improved
+
+- **CLI Progress Output**: Show progress for each task (`[1/5] Processing: ...`)
+  - Display task analysis status
+  - Show GitHub issue creation progress
+  - Show Asana update status
+  - Helps identify if process is running or stuck
+
 ## [0.4.4] - 2026-02-04
 
 ### Fixed
@@ -269,6 +284,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.5]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.1...v0.4.2
