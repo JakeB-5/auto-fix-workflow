@@ -516,7 +516,7 @@ if (command === 'init') {
   process.exit(0);
 } else if (command === '--version' || command === '-v') {
   // Show version
-  console.log('auto-fix-workflow v0.3.8');
+  console.log('auto-fix-workflow v0.4.0');
   process.exit(0);
 } else if (command === 'autofix') {
   // Run autofix command
