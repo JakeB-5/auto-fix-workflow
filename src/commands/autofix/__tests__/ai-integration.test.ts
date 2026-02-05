@@ -419,7 +419,7 @@ describe('AIIntegration', () => {
       // Verify correct tools were used
       expect(spawn).toHaveBeenCalledWith(
         expect.stringContaining('claude'),
-        expect.arrayContaining(['--allowedTools', 'Read', 'Glob', 'Grep']),
+        expect.arrayContaining(['--allowedTools', 'Read,Glob,Grep']),
         expect.any(Object)
       );
     });

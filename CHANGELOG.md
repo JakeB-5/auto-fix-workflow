@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.11] - 2026-02-05
+
+### Fixed
+
+- **allowedTools format**: Fix `--allowedTools` CLI argument to use comma-separated format
+  - Changed from `--allowedTools Read Glob Grep` to `--allowedTools Read,Glob,Grep`
+  - Ensures Claude CLI correctly enables code analysis tools
+
 ## [0.4.10] - 2026-02-05
 
 ### Fixed
@@ -342,6 +350,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.11]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.10...v0.4.11
 [0.4.10]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.9...v0.4.10
 [0.4.9]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.8...v0.4.9
 [0.4.8]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.7...v0.4.8

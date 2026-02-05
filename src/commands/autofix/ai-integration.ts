@@ -122,7 +122,8 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
   }
 
   if (allowedTools.length > 0) {
-    cmdParts.push('--allowedTools', ...allowedTools);
+    // Use comma-separated format for reliability
+    cmdParts.push('--allowedTools', allowedTools.join(','));
   }
 
   if (maxBudget !== undefined) {
