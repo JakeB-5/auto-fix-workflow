@@ -119,8 +119,26 @@ export class WorktreeTool {
       // Fetch latest from remote
       await this.execGit('fetch origin');
 
-      // Create the worktree with new branch
-      const createCmd = `worktree add -b ${params.branchName} "${worktreePath}" origin/${baseBranch}`;
+      // Check if branch already exists locally or remotely
+      const branchExists = await this.branchExists(params.branchName);
+
+      let createCmd: string;
+      if (branchExists) {
+        // If branch exists, check it out in the worktree instead of creating new
+        // First, ensure it's not already checked out somewhere else
+        try {
+          // Delete the existing local branch (if it has no uncommitted work)
+          await this.execGit(`branch -D ${params.branchName}`);
+        } catch {
+          // Branch might be checked out elsewhere or doesn't exist locally - that's ok
+        }
+        // Create worktree with new branch from base
+        createCmd = `worktree add -b ${params.branchName} "${worktreePath}" origin/${baseBranch}`;
+      } else {
+        // Create the worktree with new branch
+        createCmd = `worktree add -b ${params.branchName} "${worktreePath}" origin/${baseBranch}`;
+      }
+
       await this.execGit(createCmd);
 
       const info: WorktreeInfo = {
@@ -266,6 +284,29 @@ export class WorktreeTool {
       return null;
     }
     return result.data.find(w => w.path === worktreePath) ?? null;
+  }
+
+  /**
+   * Check if branch exists locally or remotely
+   */
+  private async branchExists(branchName: string): Promise<boolean> {
+    try {
+      // Check local branches
+      const { stdout: localBranches } = await this.execGit('branch --list');
+      if (localBranches.includes(branchName)) {
+        return true;
+      }
+
+      // Check remote branches
+      const { stdout: remoteBranches } = await this.execGit('branch -r --list');
+      if (remoteBranches.includes(`origin/${branchName}`)) {
+        return true;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   /**

@@ -356,5 +356,18 @@ export function printReport(
 export function generateSummaryLine(result: AutofixResult): string {
   const successCount = result.groups.length - result.totalFailed;
   const status = result.totalFailed === 0 ? 'SUCCESS' : 'PARTIAL';
-  return `[${status}] ${successCount}/${result.groups.length} groups processed, ${result.totalPRs} PRs created`;
+  let summary = `[${status}] ${successCount}/${result.groups.length} groups processed, ${result.totalPRs} PRs created`;
+
+  // Add first failure reason if any failed
+  if (result.totalFailed > 0) {
+    const failedGroup = result.groups.find(g => g.status === 'failed');
+    if (failedGroup?.error) {
+      const errorMsg = failedGroup.error.length > 100
+        ? failedGroup.error.slice(0, 100) + '...'
+        : failedGroup.error;
+      summary += `\n  Error: ${errorMsg}`;
+    }
+  }
+
+  return summary;
 }

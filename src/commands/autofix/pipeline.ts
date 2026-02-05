@@ -149,6 +149,14 @@ export class ProcessingPipeline {
           throw new Error(result.error.message);
         }
         context.fixResult = result.data;
+
+        // Verify that files were actually modified
+        if (context.worktree) {
+          const hasChanges = await this.hasUncommittedChanges(context.worktree.path);
+          if (!hasChanges) {
+            throw new Error('AI reported success but no files were actually modified in the worktree');
+          }
+        }
       });
 
       // Stage 4: Run Checks
@@ -330,6 +338,17 @@ export class ProcessingPipeline {
         context.pr.url
       );
     }
+  }
+
+  /**
+   * Check for uncommitted changes in worktree
+   */
+  private async hasUncommittedChanges(worktreePath: string): Promise<boolean> {
+    const result = await this.worktreeTool.execInWorktree(worktreePath, 'status --porcelain');
+    if (!isSuccess(result)) {
+      return false;
+    }
+    return result.data.stdout.trim().length > 0;
   }
 
   /**
