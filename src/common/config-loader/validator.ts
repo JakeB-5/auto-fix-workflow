@@ -134,6 +134,33 @@ function normalizeConfig(data: Record<string, unknown>): Record<string, unknown>
     result['worktree'] = normalizedWorktree;
   }
 
+  // Normalize Checks config field names
+  const checks = result['checks'] as Record<string, unknown> | undefined;
+  if (checks) {
+    const normalizedChecks = { ...checks };
+
+    // timeout → testTimeout, typeCheckTimeout, lintTimeout (apply to all if not individually set)
+    if (checks['timeout'] !== undefined) {
+      const timeout = checks['timeout'] as number;
+      if (!checks['testTimeout']) {
+        normalizedChecks['testTimeout'] = timeout;
+      }
+      if (!checks['typeCheckTimeout']) {
+        normalizedChecks['typeCheckTimeout'] = timeout;
+      }
+      if (!checks['lintTimeout']) {
+        normalizedChecks['lintTimeout'] = timeout;
+      }
+      delete normalizedChecks['timeout'];
+    }
+
+    // Remove non-schema fields (order, failFast are used elsewhere but not in schema)
+    delete normalizedChecks['order'];
+    delete normalizedChecks['failFast'];
+
+    result['checks'] = normalizedChecks;
+  }
+
   return result;
 }
 

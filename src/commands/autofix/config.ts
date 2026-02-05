@@ -107,12 +107,10 @@ export const DEFAULT_CONFIG: Partial<Config> = {
     prefix: 'autofix-',
   },
   checks: {
-    testCommand: 'npm test',
-    typeCheckCommand: 'npm run type-check',
-    lintCommand: 'npm run lint',
-    testTimeout: 300,
-    typeCheckTimeout: 60,
-    lintTimeout: 120,
+    // Note: Command defaults removed - detected at runtime based on available scripts
+    testTimeout: 300000,
+    typeCheckTimeout: 60000,
+    lintTimeout: 120000,
     maxRetries: 3,
   },
 };

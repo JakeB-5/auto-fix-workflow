@@ -237,25 +237,26 @@ export class RunChecksTool {
     worktreePath: string
   ): Promise<CheckConfiguration> {
     const packageManager = await this.detectPackageManager(worktreePath);
+    const scripts = await this.detectPackageScripts(worktreePath);
 
     const commands: Readonly<Record<CheckType, CheckCommand>> = {
       test: {
         check: 'test' as CheckType,
-        command: this.config.testCommand ?? this.getTestCommand(packageManager),
+        command: this.config.testCommand ?? this.getTestCommand(packageManager, scripts),
         args: [],
         timeoutMs: this.config.testTimeout ?? 300000,
         cwd: worktreePath,
       },
       typecheck: {
         check: 'typecheck' as CheckType,
-        command: this.config.typeCheckCommand ?? this.getTypeCheckCommand(packageManager),
+        command: this.config.typeCheckCommand ?? this.getTypeCheckCommand(packageManager, scripts),
         args: [],
         timeoutMs: this.config.typeCheckTimeout ?? 60000,
         cwd: worktreePath,
       },
       lint: {
         check: 'lint' as CheckType,
-        command: this.config.lintCommand ?? this.getLintCommand(packageManager),
+        command: this.config.lintCommand ?? this.getLintCommand(packageManager, scripts),
         args: [],
         timeoutMs: this.config.lintTimeout ?? 120000,
         cwd: worktreePath,
@@ -291,44 +292,90 @@ export class RunChecksTool {
   }
 
   /**
+   * Detect available scripts from package.json
+   */
+  private async detectPackageScripts(worktreePath: string): Promise<Set<string>> {
+    try {
+      const packageJsonPath = path.join(worktreePath, 'package.json');
+      const content = await fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content) as { scripts?: Record<string, string> };
+      return new Set(Object.keys(packageJson.scripts ?? {}));
+    } catch {
+      return new Set();
+    }
+  }
+
+  /**
    * Get test command for package manager
    */
-  private getTestCommand(pm: PackageManager): string {
+  private getTestCommand(pm: PackageManager, scripts: Set<string>): string {
+    // Check for common test script names
+    const testScripts = ['test', 'test:run'];
+    const availableScript = testScripts.find(s => scripts.has(s));
+
+    if (!availableScript) {
+      // Fallback: try to run vitest or jest directly
+      return 'npx vitest run --passWithNoTests';
+    }
+
     switch (pm) {
       case 'pnpm':
-        return 'pnpm test';
+        return `pnpm ${availableScript}`;
       case 'yarn':
-        return 'yarn test';
+        return `yarn ${availableScript}`;
       default:
-        return 'npm test';
+        return `npm run ${availableScript}`;
     }
   }
 
   /**
    * Get type-check command for package manager
    */
-  private getTypeCheckCommand(pm: PackageManager): string {
-    switch (pm) {
-      case 'pnpm':
-        return 'pnpm run type-check';
-      case 'yarn':
-        return 'yarn type-check';
-      default:
-        return 'npm run type-check';
+  private getTypeCheckCommand(pm: PackageManager, scripts: Set<string>): string {
+    // Check for common typecheck script names
+    const typecheckScripts = ['type-check', 'typecheck', 'types', 'check-types'];
+    const availableScript = typecheckScripts.find(s => scripts.has(s));
+
+    let command: string;
+    if (!availableScript) {
+      // Fallback: run tsc --noEmit directly
+      command = 'npx tsc --noEmit';
+    } else {
+      switch (pm) {
+        case 'pnpm':
+          command = `pnpm run ${availableScript}`;
+          break;
+        case 'yarn':
+          command = `yarn ${availableScript}`;
+          break;
+        default:
+          command = `npm run ${availableScript}`;
+      }
     }
+
+    return command;
   }
 
   /**
    * Get lint command for package manager
    */
-  private getLintCommand(pm: PackageManager): string {
+  private getLintCommand(pm: PackageManager, scripts: Set<string>): string {
+    // Check for common lint script names
+    const lintScripts = ['lint', 'eslint', 'check'];
+    const availableScript = lintScripts.find(s => scripts.has(s));
+
+    if (!availableScript) {
+      // Fallback: run eslint directly
+      return 'npx eslint .';
+    }
+
     switch (pm) {
       case 'pnpm':
-        return 'pnpm run lint';
+        return `pnpm run ${availableScript}`;
       case 'yarn':
-        return 'yarn lint';
+        return `yarn ${availableScript}`;
       default:
-        return 'npm run lint';
+        return `npm run ${availableScript}`;
     }
   }
 

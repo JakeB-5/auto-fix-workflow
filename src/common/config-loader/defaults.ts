@@ -41,14 +41,13 @@ export const DEFAULT_WORKTREE_CONFIG: Partial<WorktreeConfig> = {
 
 /**
  * Default Checks configuration values
+ * Note: Command defaults are intentionally NOT set here.
+ * The run-checks tool will detect available scripts at runtime.
  */
-export const DEFAULT_CHECKS_CONFIG: ChecksConfig = {
-  testCommand: 'npm test',
-  typeCheckCommand: 'npm run type-check',
-  lintCommand: 'npm run lint',
-  testTimeout: 300,
-  typeCheckTimeout: 60,
-  lintTimeout: 120,
+export const DEFAULT_CHECKS_CONFIG: Partial<ChecksConfig> = {
+  testTimeout: 300000,     // 5 minutes for tests
+  typeCheckTimeout: 60000, // 1 minute for type check
+  lintTimeout: 120000,     // 2 minutes for lint
   maxRetries: 3,
 } as const;
 
@@ -102,7 +101,7 @@ export function applyWorktreeDefaults(
  */
 export function applyChecksDefaults(
   config?: Partial<ChecksConfig>
-): ChecksConfig {
+): Partial<ChecksConfig> {
   return {
     ...DEFAULT_CHECKS_CONFIG,
     ...config,

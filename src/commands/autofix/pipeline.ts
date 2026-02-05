@@ -326,13 +326,24 @@ export class ProcessingPipeline {
       throw new Error('Missing prerequisites for commit');
     }
 
-    const result = await this.worktreeTool.execInWorktree(
+    // Commit changes
+    const commitResult = await this.worktreeTool.execInWorktree(
       context.worktree.path,
       `commit -am "${context.fixResult.commitMessage.replace(/"/g, '\\"')}"`
     );
 
-    if (!isSuccess(result)) {
-      throw new Error(`Commit failed: ${result.error.message}`);
+    if (!isSuccess(commitResult)) {
+      throw new Error(`Commit failed: ${commitResult.error.message}`);
+    }
+
+    // Push branch to remote (required for PR creation)
+    const pushResult = await this.worktreeTool.execInWorktree(
+      context.worktree.path,
+      `push -u origin ${context.worktree.branch}`
+    );
+
+    if (!isSuccess(pushResult)) {
+      throw new Error(`Push failed: ${pushResult.error.message}`);
     }
   }
 
@@ -383,6 +394,7 @@ export class ProcessingPipeline {
     const fs = await import('fs');
     const path = await import('path');
 
+
     // Detect package manager based on lock file
     let installCommand: string;
     if (fs.existsSync(path.join(worktreePath, 'pnpm-lock.yaml'))) {
@@ -399,17 +411,20 @@ export class ProcessingPipeline {
       return;
     }
 
+
     // Execute install command
     const { exec } = await import('child_process');
     const { promisify } = await import('util');
     const execAsync = promisify(exec);
 
     try {
+      const startTime = Date.now();
       await execAsync(installCommand, {
         cwd: worktreePath,
         timeout: 5 * 60 * 1000, // 5 minute timeout for install
         env: { ...process.env, CI: 'true' }, // CI mode for cleaner output
       });
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to install dependencies: ${message}`);
