@@ -34,7 +34,8 @@ vi.mock('../mcp-tools/worktree.js', () => ({
     }),
     remove: vi.fn().mockResolvedValue({ success: true }),
     list: vi.fn().mockResolvedValue({ success: true, data: [] }),
-    execInWorktree: vi.fn().mockResolvedValue({ success: true, data: { stdout: '', stderr: '' } }),
+    // Return modified files for git status --porcelain to pass hasUncommittedChanges check
+    execInWorktree: vi.fn().mockResolvedValue({ success: true, data: { stdout: 'M src/test.ts', stderr: '' } }),
   })),
 }));
 
