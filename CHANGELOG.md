@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.10] - 2026-02-05
+
+### Fixed
+
+- **Triage Code Analysis**: Fixed triage command to actually analyze source code in working directory
+  - Added `allowedTools: ['Read', 'Glob', 'Grep']` to enable Claude to read files
+  - Added `workingDir: process.cwd()` to set correct working directory
+  - Updated prompt to instruct Claude to explore codebase before analysis
+  - Now produces accurate component names, related files, and higher confidence scores
+
 ## [0.4.9] - 2026-02-04
 
 ### Fixed
@@ -332,6 +342,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.10]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.9...v0.4.10
 [0.4.9]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.8...v0.4.9
 [0.4.8]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.6...v0.4.7

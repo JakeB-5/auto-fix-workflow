@@ -543,6 +543,10 @@ export class AIIntegration {
       prompt,
       model,
       timeout: 300000, // 5 minutes default (per spec REQ-AI-005)
+      // Enable code analysis tools for actual codebase exploration
+      allowedTools: ['Read', 'Glob', 'Grep'],
+      // Use current working directory for code analysis
+      workingDir: process.cwd(),
     });
 
     process.stderr.write(' done\n');
@@ -595,24 +599,41 @@ export class AIIntegration {
    * Build prompt for task analysis
    */
   private buildTaskAnalysisPrompt(task: AsanaTask): string {
-    return `Analyze this Asana task and classify it for GitHub issue creation.
+    return `You are analyzing an Asana task to create a GitHub issue.
+
+IMPORTANT: You have access to tools (Read, Glob, Grep) to explore the codebase in the current working directory.
+Use these tools to find relevant files and understand the code structure before responding.
+
+## Task Information
 
 Task Name: ${task.name}
 Description: ${task.notes || '(no description)'}
 Tags: ${task.tags?.map(t => t.name).join(', ') || '(none)'}
 Custom Fields: ${task.customFields?.map(f => `${f.name}: ${f.displayValue || f.textValue || f.enumValue?.name || ''}`).join(', ') || '(none)'}
 
-Respond in JSON format:
+## Your Analysis Steps
+
+1. **Explore the codebase**: Use Glob to find relevant files based on the task name/description
+2. **Read relevant files**: Use Read to understand the code context
+3. **Identify the component**: Determine which part of the codebase this task relates to
+4. **Find related files**: List actual file paths that would need to be modified
+5. **Assess complexity**: Evaluate how difficult this task would be to implement
+
+## Required Output
+
+After exploring the codebase, respond with ONLY this JSON (no additional text):
 {
   "issueType": "bug" | "feature" | "refactor" | "docs" | "test" | "chore",
   "priority": "critical" | "high" | "medium" | "low",
   "labels": ["label1", "label2"],
-  "component": "component-name",
-  "relatedFiles": ["path/to/file.ts"],
-  "summary": "Brief summary for GitHub issue body",
-  "acceptanceCriteria": ["criterion 1", "criterion 2"],
+  "component": "actual-component-name-from-codebase",
+  "relatedFiles": ["actual/path/to/file.ts", "another/real/file.ts"],
+  "summary": "Technical summary based on code analysis",
+  "acceptanceCriteria": ["specific criterion based on code", "another criterion"],
   "confidence": 0.0-1.0
-}`;
+}
+
+The confidence should be HIGH (0.7-1.0) if you found actual files, MEDIUM (0.4-0.7) if partial match, LOW (0.0-0.4) if guessing.`;
   }
 
   /**
