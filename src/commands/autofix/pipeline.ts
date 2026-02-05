@@ -168,7 +168,23 @@ export class ProcessingPipeline {
         context.checkResult = result.data;
 
         if (!result.data.passed) {
-          throw new Error('Checks failed');
+          // Build detailed error message from failed checks
+          const failedChecks = result.data.results.filter(r => !r.passed);
+          const errorDetails = failedChecks.map(c => {
+            let detail = `[${c.check}] ${c.status}`;
+            if (c.error) {
+              detail += `: ${c.error}`;
+            }
+            // Include stderr or stdout for more context (truncated)
+            const output = c.stderr || c.stdout;
+            if (output) {
+              const truncated = output.slice(0, 500);
+              detail += `\n${truncated}${output.length > 500 ? '...(truncated)' : ''}`;
+            }
+            return detail;
+          }).join('\n\n');
+
+          throw new Error(`Checks failed:\n${errorDetails}`);
         }
       });
 
