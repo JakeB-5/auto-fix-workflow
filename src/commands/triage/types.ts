@@ -210,15 +210,17 @@ export interface GitHubIssueResult {
 export interface AsanaTaskUpdateParams {
   /** Task GID */
   readonly taskGid: string;
+  /** Project GID (required for section move) */
+  readonly projectGid?: string;
   /** New section GID */
   readonly sectionGid?: string;
-  /** Tags to add */
+  /** Tag GIDs to add */
   readonly addTags?: readonly string[];
-  /** Tags to remove */
+  /** Tag GIDs to remove */
   readonly removeTags?: readonly string[];
   /** Custom field updates */
   readonly customFields?: Record<string, string | number | null>;
-  /** Notes to append */
+  /** Notes to append (will be added as comment) */
   readonly appendNotes?: string;
   /** Mark as completed */
   readonly completed?: boolean;

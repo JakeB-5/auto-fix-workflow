@@ -291,10 +291,11 @@ async function processTasks(
       console.log(`${progress} Updating Asana task...`);
       if (processedSectionGid || syncedTagGid) {
         if (process.env['DEBUG']) {
-          console.log(`[DEBUG] Updating task ${task.gid}: section=${processedSectionGid}, tags=${syncedTagGid}`);
+          console.log(`[DEBUG] Updating task ${task.gid}: project=${projectGid}, section=${processedSectionGid}, tags=${syncedTagGid}`);
         }
         const updateResult = await toolset.asana.updateTask({
           taskGid: task.gid,
+          projectGid: projectGid, // Required for section move
           sectionGid: processedSectionGid || undefined,
           addTags: syncedTagGid ? [syncedTagGid] : undefined,
           appendNotes: `GitHub issue created: ${issue.url}`,

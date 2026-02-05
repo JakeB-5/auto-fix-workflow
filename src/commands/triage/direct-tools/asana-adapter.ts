@@ -12,9 +12,12 @@ import type { AsanaTask, AsanaTaskUpdateParams } from '../types.js';
 // Import existing Asana API modules
 import { executeListTasks as apiListTasks } from '../../../asana/list-tasks/index.js';
 import { executeGetTask as apiGetTask } from '../../../asana/get-task/index.js';
-import { executeUpdateTask as apiUpdateTask } from '../../../asana/update-task/index.js';
 import { getAsanaClient, getSectionGidByName } from '../../../asana/list-tasks/index.js';
 import { getTagGidByName } from '../../../asana/update-task/tag-cache.js';
+// Import direct section/tag/comment functions
+import { moveTaskToSection } from '../../../asana/update-task/sections.js';
+import { addTagToTask } from '../../../asana/update-task/tags.js';
+import { addComment } from '../../../asana/update-task/comments.js';
 
 /**
  * Asana direct adapter
@@ -120,23 +123,51 @@ export class AsanaDirectAdapter implements AsanaToolset {
   }
 
   async updateTask(params: AsanaTaskUpdateParams): Promise<Result<void, Error>> {
-    try {
-      // Build input matching UpdateTaskInput schema
-      const result = await apiUpdateTask(this.config, {
-        taskGid: params.taskGid,
-        moveToSection: params.sectionGid, // API uses moveToSection, not sectionGid
-        addTags: params.addTags ? [...params.addTags] : undefined,
-        removeTags: params.removeTags ? [...params.removeTags] : undefined,
-        completed: params.completed,
-        // appendNotes is handled via comment
-        comment: params.appendNotes,
-      });
+    const errors: string[] = [];
 
-      if (isSuccess(result)) {
-        return ok(undefined);
+    try {
+      // Move to section (using GID directly)
+      if (params.sectionGid && params.projectGid) {
+        try {
+          await moveTaskToSection(
+            this.config,
+            params.taskGid,
+            params.projectGid,
+            params.sectionGid
+          );
+        } catch (e) {
+          errors.push(`Section move failed: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
 
-      return err(new Error(result.error?.message || 'Failed to update task'));
+      // Add tags (using GIDs directly)
+      if (params.addTags && params.addTags.length > 0) {
+        for (const tagGid of params.addTags) {
+          try {
+            await addTagToTask(this.config, params.taskGid, tagGid);
+          } catch (e) {
+            errors.push(`Add tag ${tagGid} failed: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+      }
+
+      // Add comment (for appendNotes)
+      if (params.appendNotes) {
+        try {
+          await addComment(this.config, {
+            taskGid: params.taskGid,
+            text: params.appendNotes,
+          });
+        } catch (e) {
+          errors.push(`Add comment failed: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        return err(new Error(`Partial update failure: ${errors.join('; ')}`));
+      }
+
+      return ok(undefined);
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }

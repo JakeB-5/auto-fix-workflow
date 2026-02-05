@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.16] - 2026-02-05
+
+### Fixed
+
+- **Asana task update**: Fixed section move and tag addition not working
+  - Use `moveTaskToSection()` directly with GID instead of going through `executeUpdateTask`
+  - Use `addTagToTask()` directly with tag GID
+  - Pass `projectGid` for section move (was missing)
+  - Add proper error reporting for partial failures
+
 ## [0.4.15] - 2026-02-05
 
 ### Added
@@ -382,6 +392,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.16]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.15...v0.4.16
 [0.4.15]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.14...v0.4.15
 [0.4.14]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.13...v0.4.14
 [0.4.13]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.12...v0.4.13
