@@ -6,6 +6,7 @@
 import type { Config } from '../../common/types/index.js';
 import type { Result } from '../../common/types/result.js';
 import { ok, err, isSuccess } from '../../common/types/result.js';
+import { loadConfig } from '../../common/config-loader/index.js';
 import type { AutofixOptions, AutofixResult, GroupResult } from './types.js';
 import {
   parseArgs,
@@ -66,10 +67,15 @@ export async function runAutofix(
     });
   }
 
-  // Load and merge configuration
+  // Load configuration from .auto-fix.yaml file
+  const fileConfigResult = await loadConfig();
+  const fileConfig = isSuccess(fileConfigResult) ? fileConfigResult.data : {};
+
+  // Load and merge configuration (file config takes precedence over defaults, env over file)
   const envConfig = loadEnvConfig();
   const config = mergeConfigs(
     DEFAULT_CONFIG as Config,
+    fileConfig as Config,
     envConfig as Config,
     configOverrides ?? {}
   );
