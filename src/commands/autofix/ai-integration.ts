@@ -554,6 +554,9 @@ export class AIIntegration {
 
     if (isFailure(result)) {
       // Fallback to heuristic analysis
+      if (process.env['DEBUG']) {
+        process.stderr.write(`[DEBUG] Claude CLI failed: ${result.error.code} - ${result.error.message}\n`);
+      }
       return ok(this.getFallbackTaskAnalysis(task));
     }
 
@@ -562,6 +565,11 @@ export class AIIntegration {
     // Track cost if available
     if (claudeResult.usage) {
       this.budgetTracker.addCost(`triage-${task.gid}`, claudeResult.usage.cost);
+    }
+
+    // Debug: log raw output
+    if (process.env['DEBUG']) {
+      process.stderr.write(`[DEBUG] Claude raw output (first 500 chars):\n${claudeResult.output.slice(0, 500)}\n`);
     }
 
     // Parse response
@@ -583,6 +591,9 @@ export class AIIntegration {
         // Try a more lenient pattern for nested objects
         const lenientMatch = textToSearch.match(/\{\s*"issueType"\s*:\s*"[^"]+?"[\s\S]*?"confidence"\s*:\s*[\d.]+\s*\}/);
         if (!lenientMatch) {
+          if (process.env['DEBUG']) {
+            process.stderr.write(`[DEBUG] No JSON found in response. Text to search:\n${textToSearch.slice(0, 1000)}\n`);
+          }
           return ok(this.getFallbackTaskAnalysis(task));
         }
         const parsed = JSON.parse(lenientMatch[0]) as TaskAnalysis;
@@ -591,7 +602,10 @@ export class AIIntegration {
 
       const parsed = JSON.parse(jsonMatch[0]) as TaskAnalysis;
       return ok(parsed);
-    } catch {
+    } catch (parseError) {
+      if (process.env['DEBUG']) {
+        process.stderr.write(`[DEBUG] Parse error: ${parseError}\n`);
+      }
       return ok(this.getFallbackTaskAnalysis(task));
     }
   }

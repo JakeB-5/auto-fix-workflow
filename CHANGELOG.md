@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.13] - 2026-02-05
+
+### Added
+
+- **Debug logging**: Set `DEBUG=1` environment variable to see Claude CLI output
+  - Shows raw Claude response when parsing fails
+  - Helps diagnose AI analysis issues
+
 ## [0.4.12] - 2026-02-05
 
 ### Changed
@@ -359,6 +367,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.13]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.12...v0.4.13
 [0.4.12]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.11...v0.4.12
 [0.4.11]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.10...v0.4.11
 [0.4.10]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.9...v0.4.10
