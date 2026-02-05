@@ -26,7 +26,7 @@ export const WorktreeOperationSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create'),
     branchName: z.string(),
-    baseBranch: z.string().optional().default('main'),
+    baseBranch: z.string().optional().default('autofixing'),
     issueNumbers: z.array(z.number()),
   }),
   z.object({
@@ -102,7 +102,7 @@ export class WorktreeTool {
   ): Promise<Result<WorktreeInfo, WorktreeError>> {
     try {
       const worktreePath = params.path ?? this.generateWorktreePath(params.branchName);
-      const baseBranch = params.baseBranch ?? 'main';
+      const baseBranch = params.baseBranch ?? 'autofixing';
 
       // Ensure base directory exists
       await fs.mkdir(this.config.baseDir, { recursive: true });

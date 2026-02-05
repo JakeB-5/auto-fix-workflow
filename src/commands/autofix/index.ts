@@ -146,6 +146,27 @@ export async function runAutofix(
     if (options.dryRun) {
       const { result, preview } = executeDryRun(groups, config, options);
       console.log(preview);
+
+      // In dry-run mode, also perform actual AI analysis for first group
+      if (groups.length > 0 && process.env['DEBUG']) {
+        console.log('\n[DEBUG] Running actual AI analysis in dry-run mode...\n');
+        const { AIIntegration } = await import('./ai-integration.js');
+        const aiIntegration = new AIIntegration();
+        const firstGroup = groups[0]!;
+
+        try {
+          const analysisResult = await aiIntegration.analyzeGroup(firstGroup, repoPath);
+          if (isSuccess(analysisResult)) {
+            console.log('[DEBUG] AI Analysis Result:');
+            console.log(JSON.stringify(analysisResult.data, null, 2));
+          } else {
+            console.log('[DEBUG] AI Analysis failed:', analysisResult.error.message);
+          }
+        } catch (error) {
+          console.log('[DEBUG] AI Analysis error:', error);
+        }
+      }
+
       return ok(result);
     }
 
@@ -161,7 +182,7 @@ export async function runAutofix(
         config,
         dryRun: options.dryRun,
         maxRetries: options.maxRetries,
-        baseBranch: options.baseBranch ?? config.github.defaultBranch ?? 'main',
+        baseBranch: options.baseBranch ?? 'autofixing',
         repoPath,
       });
 

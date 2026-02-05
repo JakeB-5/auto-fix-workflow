@@ -69,7 +69,7 @@ export class WorktreeManager {
   async acquire(
     branchName: string,
     issueNumbers: readonly number[],
-    baseBranch: string = 'main'
+    baseBranch: string = 'autofixing'
   ): Promise<Result<WorktreeLease, WorktreeManagerError>> {
     // Check concurrency limit
     if (this.activeWorktrees.size >= this.config.maxConcurrent) {

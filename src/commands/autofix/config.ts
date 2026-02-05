@@ -50,7 +50,7 @@ export const AutofixArgsSchema = z.object({
 
   /** Base branch */
   baseBranch: z.string().optional()
-    .describe('Base branch for PRs (default: main)'),
+    .describe('Base branch for PRs (default: autofixing)'),
 
   /** Verbose output */
   verbose: z.boolean().default(false)
@@ -260,7 +260,7 @@ OPTIONS:
   --max-retries <n>     Maximum retry attempts (default: 3)
   --labels <labels>     Filter issues by labels (comma-separated)
   --exclude-labels      Exclude issues with labels (comma-separated)
-  --base-branch <name>  Base branch for PRs (default: main)
+  --base-branch <name>  Base branch for PRs (default: autofixing)
   --verbose             Enable verbose output
   --config <path>       Path to config file
 

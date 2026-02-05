@@ -65,11 +65,11 @@ export class DryRunExecutor {
     // Simulate branch creation
     operations.push({
       type: 'branch',
-      description: `Create branch ${group.branchName} from ${this.options.baseBranch ?? 'main'}`,
+      description: `Create branch ${group.branchName} from ${this.options.baseBranch ?? 'autofixing'}`,
       affects: [group.branchName],
       simulatedResult: {
         name: group.branchName,
-        base: this.options.baseBranch ?? 'main',
+        base: this.options.baseBranch ?? 'autofixing',
       },
     });
 
@@ -95,7 +95,7 @@ export class DryRunExecutor {
       affects: group.issues.map(i => `Issue #${i.number}`),
       simulatedResult: {
         title: prTitle,
-        base: this.options.baseBranch ?? 'main',
+        base: this.options.baseBranch ?? 'autofixing',
         head: group.branchName,
         linkedIssues: group.issues.map(i => i.number),
         draft: false,
