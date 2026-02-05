@@ -268,7 +268,7 @@ describe('AIIntegration', () => {
       expect(commandStr).toContain('--print');
       expect(commandStr).toContain('--output-format stream-json');
       expect(commandStr).toContain('--model opus');
-      expect(commandStr).toContain('--allowedTools Read Grep');
+      expect(commandStr).toContain('--allowedTools Read,Grep');
     });
 
     it('should handle CLI not found error', async () => {
