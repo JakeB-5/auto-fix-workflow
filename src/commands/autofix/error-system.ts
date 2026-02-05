@@ -294,6 +294,7 @@ export function stageToErrorCode(stage: PipelineStage): AutofixErrorCode {
     worktree_create: 'WORKTREE_CREATE_FAILED',
     ai_analysis: 'AI_ANALYSIS_FAILED',
     ai_fix: 'AI_FIX_FAILED',
+    install_deps: 'PIPELINE_FAILED',
     checks: 'CHECK_FAILED',
     commit: 'WORKTREE_ERROR',
     pr_create: 'PR_CREATE_FAILED',

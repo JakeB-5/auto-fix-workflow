@@ -159,7 +159,15 @@ export class ProcessingPipeline {
         }
       });
 
-      // Stage 4: Run Checks
+      // Stage 4: Install dependencies (worktrees don't share node_modules)
+      await this.runStage(context, 'install_deps', async () => {
+        if (!context.worktree) {
+          throw new Error('No worktree available for dependency installation');
+        }
+        await this.installDependencies(context.worktree.path);
+      });
+
+      // Stage 5: Run Checks
       await this.runStage(context, 'checks', async () => {
         const result = await this.runChecks(context);
         if (!isSuccess(result)) {
@@ -365,6 +373,47 @@ export class ProcessingPipeline {
       return false;
     }
     return result.data.stdout.trim().length > 0;
+  }
+
+  /**
+   * Install dependencies in worktree
+   * Worktrees don't share node_modules, so we need to install dependencies
+   */
+  private async installDependencies(worktreePath: string): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    // Detect package manager based on lock file
+    let installCommand: string;
+    if (fs.existsSync(path.join(worktreePath, 'pnpm-lock.yaml'))) {
+      installCommand = 'pnpm install --frozen-lockfile';
+    } else if (fs.existsSync(path.join(worktreePath, 'yarn.lock'))) {
+      installCommand = 'yarn install --frozen-lockfile';
+    } else if (fs.existsSync(path.join(worktreePath, 'package-lock.json'))) {
+      installCommand = 'npm ci';
+    } else if (fs.existsSync(path.join(worktreePath, 'package.json'))) {
+      // Fallback to npm install if no lock file but package.json exists
+      installCommand = 'npm install';
+    } else {
+      // No package.json, skip dependency installation
+      return;
+    }
+
+    // Execute install command
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    try {
+      await execAsync(installCommand, {
+        cwd: worktreePath,
+        timeout: 5 * 60 * 1000, // 5 minute timeout for install
+        env: { ...process.env, CI: 'true' }, // CI mode for cleaner output
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to install dependencies: ${message}`);
+    }
   }
 
   /**

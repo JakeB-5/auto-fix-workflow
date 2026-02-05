@@ -141,6 +141,7 @@ export type PipelineStage =
   | 'worktree_create'
   | 'ai_analysis'
   | 'ai_fix'
+  | 'install_deps'
   | 'checks'
   | 'commit'
   | 'pr_create'
