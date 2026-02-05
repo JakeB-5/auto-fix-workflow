@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.15] - 2026-02-05
+
+### Added
+
+- **Enhanced debug logging**: More detailed Asana update debugging
+  - Shows section/tag lookup results
+  - Shows task update parameters and errors
+
 ## [0.4.14] - 2026-02-05
 
 ### Fixed
@@ -374,6 +382,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.15]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.14...v0.4.15
 [0.4.14]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.13...v0.4.14
 [0.4.13]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.12...v0.4.13
 [0.4.12]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.11...v0.4.12

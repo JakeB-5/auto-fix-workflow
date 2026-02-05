@@ -202,9 +202,23 @@ async function processTasks(
     ? processedSectionResult.data
     : null;
 
+  if (process.env['DEBUG']) {
+    console.log(`[DEBUG] Looking for section: "${triageConfig.processedSectionName}" -> ${processedSectionGid || 'NOT FOUND'}`);
+    if (isFailure(processedSectionResult)) {
+      console.log(`[DEBUG] Section lookup error: ${processedSectionResult.error}`);
+    }
+  }
+
   // Get synced tag GID
   const syncedTagResult = await toolset.asana.findTagByName(triageConfig.syncedTagName);
   const syncedTagGid = isSuccess(syncedTagResult) ? syncedTagResult.data : null;
+
+  if (process.env['DEBUG']) {
+    console.log(`[DEBUG] Looking for tag: "${triageConfig.syncedTagName}" -> ${syncedTagGid || 'NOT FOUND'}`);
+    if (isFailure(syncedTagResult)) {
+      console.log(`[DEBUG] Tag lookup error: ${syncedTagResult.error}`);
+    }
+  }
 
   let taskIndex = 0;
   for (const task of tasks) {
@@ -276,12 +290,22 @@ async function processTasks(
       // Update Asana task (best effort - move to processed section and add synced tag)
       console.log(`${progress} Updating Asana task...`);
       if (processedSectionGid || syncedTagGid) {
-        await toolset.asana.updateTask({
+        if (process.env['DEBUG']) {
+          console.log(`[DEBUG] Updating task ${task.gid}: section=${processedSectionGid}, tags=${syncedTagGid}`);
+        }
+        const updateResult = await toolset.asana.updateTask({
           taskGid: task.gid,
           sectionGid: processedSectionGid || undefined,
           addTags: syncedTagGid ? [syncedTagGid] : undefined,
           appendNotes: `GitHub issue created: ${issue.url}`,
         });
+        if (process.env['DEBUG'] && isFailure(updateResult)) {
+          console.log(`[DEBUG] Task update failed: ${updateResult.error}`);
+        }
+      } else {
+        if (process.env['DEBUG']) {
+          console.log(`[DEBUG] Skipping Asana update: no section or tag GID found`);
+        }
       }
 
     } catch (error) {
