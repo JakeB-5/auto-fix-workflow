@@ -117,6 +117,11 @@ export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<Cl
     '--output-format', streamOutput ? 'stream-json' : 'json',
   ];
 
+  // --verbose is required when using --print with --output-format=stream-json
+  if (streamOutput) {
+    cmdParts.push('--verbose');
+  }
+
   if (model) {
     cmdParts.push('--model', model);
   }

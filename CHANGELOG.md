@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.14] - 2026-02-05
+
+### Fixed
+
+- **Claude CLI stream-json error**: Add `--verbose` flag when using `--output-format=stream-json`
+  - Fixes: "When using --print, --output-format=stream-json requires --verbose"
+
 ## [0.4.13] - 2026-02-05
 
 ### Added
@@ -367,6 +374,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.14]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.13...v0.4.14
 [0.4.13]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.12...v0.4.13
 [0.4.12]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.11...v0.4.12
 [0.4.11]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.10...v0.4.11

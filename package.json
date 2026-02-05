@@ -1,6 +1,6 @@
 {
   "name": "auto-fix-workflow",
-  "version": "0.4.13",
+  "version": "0.4.14",
   "description": "Auto-fix workflow MCP server for GitHub issue automation",
   "type": "module",
   "main": "dist/index.js",
