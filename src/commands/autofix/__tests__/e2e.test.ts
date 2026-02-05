@@ -157,6 +157,7 @@ function mockPullRequest(number: number) {
 describe('E2E: Autofix Command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
 
     // Set up environment variables
     process.env.GITHUB_TOKEN = 'test-token';

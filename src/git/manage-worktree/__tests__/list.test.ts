@@ -4,29 +4,28 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { listWorktrees } from '../list.js';
 import type { ListWorktreesParams } from '../../../common/types/index.js';
 import { isSuccess, isFailure } from '../../../common/types/index.js';
 
 // simple-git 모킹
+const mockRaw = vi.fn();
 vi.mock('simple-git', () => ({
   simpleGit: vi.fn(() => ({
-    raw: vi.fn(),
+    raw: mockRaw,
   })),
 }));
 
 describe('listWorktrees', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
+    mockRaw.mockReset();
   });
 
   describe('git worktree list 파싱', () => {
     it('빈 출력에 대해 빈 배열을 반환해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(''),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue('');
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -37,15 +36,10 @@ describe('listWorktrees', () => {
     });
 
     it('단일 worktree 정보를 파싱해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi
-          .fn()
-          .mockResolvedValue(
-            'worktree /test/path\nHEAD abc123def456\nbranch refs/heads/main\n\n'
-          ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path\nHEAD abc123def456\nbranch refs/heads/main\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -60,14 +54,11 @@ describe('listWorktrees', () => {
     });
 
     it('여러 worktree 정보를 파싱해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(
-          'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
-            'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
-        ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
+          'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -82,15 +73,10 @@ describe('listWorktrees', () => {
     });
 
     it('detached HEAD 상태를 파싱해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi
-          .fn()
-          .mockResolvedValue(
-            'worktree /test/path\nHEAD abc123\ndetached\n\n'
-          ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path\nHEAD abc123\ndetached\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -102,15 +88,10 @@ describe('listWorktrees', () => {
     });
 
     it('빈 줄 없이 끝나는 출력을 파싱해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi
-          .fn()
-          .mockResolvedValue(
-            'worktree /test/path\nHEAD abc123\nbranch refs/heads/main'
-          ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path\nHEAD abc123\nbranch refs/heads/main'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -124,14 +105,11 @@ describe('listWorktrees', () => {
 
   describe('필터링', () => {
     it('상태로 필터링해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(
-          'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
-            'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
-        ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
+          'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const params: ListWorktreesParams = {
         status: 'ready',
@@ -146,14 +124,11 @@ describe('listWorktrees', () => {
     });
 
     it('이슈 번호로 필터링해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(
-          'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
-            'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
-        ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
+          'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       // 참고: 현재 구현에서는 issueNumbers가 빈 배열로 반환되므로
       // 이 테스트는 실제로는 빈 배열을 반환함
@@ -171,13 +146,10 @@ describe('listWorktrees', () => {
     });
 
     it('상태와 이슈 번호로 동시에 필터링해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(
-          'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n'
-        ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const params: ListWorktreesParams = {
         status: 'ready',
@@ -192,11 +164,8 @@ describe('listWorktrees', () => {
 
   describe('에러 처리', () => {
     it('git 명령 실행 실패 시 에러를 반환해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockRejectedValue(new Error('Git command failed')),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockRejectedValue(new Error('Git command failed'));
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 
@@ -210,14 +179,11 @@ describe('listWorktrees', () => {
 
   describe('성공 케이스', () => {
     it('파라미터 없이 모든 worktree를 조회해야 함', async () => {
-      const simpleGit = await import('simple-git');
-      const mockGit = {
-        raw: vi.fn().mockResolvedValue(
-          'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
-            'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
-        ),
-      };
-      vi.mocked(simpleGit.simpleGit).mockReturnValue(mockGit as any);
+      mockRaw.mockResolvedValue(
+        'worktree /test/path1\nHEAD abc123\nbranch refs/heads/main\n\n' +
+          'worktree /test/path2\nHEAD def456\nbranch refs/heads/feature\n\n'
+      );
+      const { listWorktrees } = await import('../list.js');
 
       const result = await listWorktrees();
 

@@ -172,6 +172,7 @@ describe('ProcessingPipeline', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
 
     pipelineConfig = {
       config: createMockConfig(),
