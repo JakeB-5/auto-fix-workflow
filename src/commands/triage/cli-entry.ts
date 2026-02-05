@@ -130,18 +130,59 @@ async function processTasks(
   owner: string,
   repo: string
 ): Promise<Result<TriageResult, Error>> {
-  // Handle dry run mode
+  // Handle dry run mode - perform actual AI analysis but skip side effects
   if (options.dryRun) {
+    console.log('\n=== DRY RUN MODE (with AI Analysis) ===\n');
     const simulator = new DryRunSimulator();
+
+    let taskIndex = 0;
     for (const task of tasks) {
-      const analysis = simulator.simulateAnalysis(task);
+      taskIndex++;
+      const progress = `[${taskIndex}/${tasks.length}]`;
+
+      console.log(`${progress} Processing: ${task.name}`);
+
+      // Perform ACTUAL AI analysis (not simulated)
+      console.log(`${progress} Analyzing with AI...`);
+      const analysisResult = await toolset.analyzer.analyzeTask(task);
+
+      let analysis: import('./types.js').TaskAnalysis;
+      if (isSuccess(analysisResult)) {
+        analysis = analysisResult.data;
+        console.log(`${progress} Analysis complete:`);
+        console.log(`        - Type: ${analysis.issueType}`);
+        console.log(`        - Priority: ${analysis.priority}`);
+        console.log(`        - Component: ${analysis.component}`);
+        console.log(`        - Confidence: ${Math.round(analysis.confidence * 100)}%`);
+        if (analysis.relatedFiles.length > 0) {
+          console.log(`        - Related files: ${analysis.relatedFiles.join(', ')}`);
+        }
+      } else {
+        console.log(`${progress} Analysis failed, using fallback`);
+        analysis = {
+          issueType: 'chore',
+          priority: 'medium',
+          labels: ['auto-fix'],
+          component: 'general',
+          relatedFiles: [],
+          summary: task.notes || task.name,
+          acceptanceCriteria: [],
+          confidence: 0.3,
+        };
+      }
+
+      // Record the action with actual analysis data
+      simulator.recordAnalysis(task, analysis);
       const issueInfo = simulator.simulateCreateIssue(task, analysis);
       simulator.simulateUpdateTask(task, {
         sectionGid: 'mock-processed-section',
         tagGids: ['mock-synced-tag'],
         comment: `GitHub issue created: ${issueInfo.githubIssueUrl}`,
       });
+
+      console.log('');
     }
+
     const dryRunResult = simulator.getResult();
     console.log(formatDryRunResult(dryRunResult));
     return { success: true, data: toTriageResult(dryRunResult) };

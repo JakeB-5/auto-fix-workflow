@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.12] - 2026-02-05
+
+### Changed
+
+- **Dry-run with real AI analysis**: `triage --dry-run` now performs actual AI analysis
+  - Shows analysis results (type, priority, component, confidence, related files)
+  - Still skips side effects (no GitHub issues created, no Asana updates)
+  - Useful for verifying AI analysis without making changes
+
 ## [0.4.11] - 2026-02-05
 
 ### Fixed
@@ -350,6 +359,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.12]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.11...v0.4.12
 [0.4.11]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.10...v0.4.11
 [0.4.10]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.9...v0.4.10
 [0.4.9]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.8...v0.4.9
