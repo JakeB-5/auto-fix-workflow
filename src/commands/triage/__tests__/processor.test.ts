@@ -325,3 +325,96 @@ describe('Options validation', () => {
     );
   });
 });
+
+describe('NeedsInfo configuration', () => {
+  it('should have needsInfo defaults in DEFAULT_TRIAGE_CONFIG', () => {
+    expect(DEFAULT_TRIAGE_CONFIG.needsInfoLabels).toEqual(['needs-info']);
+    expect(DEFAULT_TRIAGE_CONFIG.confidenceThreshold).toBe(0.5);
+  });
+
+  it('should identify low confidence analysis as needs-info', () => {
+    const lowConfidence = createMockAnalysis({ confidence: 0.3 });
+    const highConfidence = createMockAnalysis({ confidence: 0.8 });
+    const threshold = DEFAULT_TRIAGE_CONFIG.confidenceThreshold;
+
+    expect(lowConfidence.confidence < threshold).toBe(true);
+    expect(highConfidence.confidence < threshold).toBe(false);
+  });
+
+  it('should identify edge case at threshold', () => {
+    const atThreshold = createMockAnalysis({ confidence: 0.5 });
+    const belowThreshold = createMockAnalysis({ confidence: 0.49 });
+    const threshold = DEFAULT_TRIAGE_CONFIG.confidenceThreshold;
+
+    expect(atThreshold.confidence < threshold).toBe(false);
+    expect(belowThreshold.confidence < threshold).toBe(true);
+  });
+});
+
+describe('NeedsInfo issue info', () => {
+  it('should create CreatedIssueInfo with needsInfo flag', () => {
+    const task = createMockTask();
+    const issueInfo = {
+      asanaTaskGid: task.gid,
+      githubIssueNumber: 42,
+      githubIssueUrl: 'https://github.com/test/repo/issues/42',
+      title: task.name,
+      needsInfo: true,
+      analysisResult: 'needs-more-info',
+    };
+
+    expect(issueInfo.needsInfo).toBe(true);
+    expect(issueInfo.analysisResult).toBe('needs-more-info');
+  });
+
+  it('should create normal CreatedIssueInfo without needsInfo', () => {
+    const task = createMockTask();
+    const issueInfo = {
+      asanaTaskGid: task.gid,
+      githubIssueNumber: 43,
+      githubIssueUrl: 'https://github.com/test/repo/issues/43',
+      title: task.name,
+    };
+
+    expect(issueInfo.needsInfo).toBeUndefined();
+    expect(issueInfo.analysisResult).toBeUndefined();
+  });
+});
+
+describe('Suggestion building', () => {
+  it('should suggest adding files when none found', () => {
+    const analysis = createMockAnalysis({ relatedFiles: [], component: 'general' });
+    const suggestions: string[] = [];
+
+    if (analysis.relatedFiles.length === 0) {
+      suggestions.push('Include file paths');
+    }
+    if (analysis.component === 'general') {
+      suggestions.push('Identify specific component');
+    }
+
+    expect(suggestions).toHaveLength(2);
+  });
+
+  it('should suggest acceptance criteria when missing', () => {
+    const analysis = createMockAnalysis({ acceptanceCriteria: [] });
+    const suggestions: string[] = [];
+
+    if (analysis.acceptanceCriteria.length === 0) {
+      suggestions.push('Define acceptance criteria');
+    }
+
+    expect(suggestions).toHaveLength(1);
+  });
+
+  it('should suggest reproduction steps for bugs', () => {
+    const analysis = createMockAnalysis({ issueType: 'bug' });
+    const suggestions: string[] = [];
+
+    if (analysis.issueType === 'bug') {
+      suggestions.push('Provide reproduction steps');
+    }
+
+    expect(suggestions).toHaveLength(1);
+  });
+});

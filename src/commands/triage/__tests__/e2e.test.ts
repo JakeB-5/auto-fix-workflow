@@ -328,6 +328,7 @@ describe('E2E: Triage Command', () => {
         created: 7,
         skipped: 2,
         failed: 1,
+        needsInfo: 0,
         durationMs: 15000,
         createdIssues: [
           { asanaTaskGid: '1', githubIssueNumber: 101, githubIssueUrl: 'url1', title: 'Issue 1' },
@@ -340,9 +341,10 @@ describe('E2E: Triage Command', () => {
 
       // Text report
       const textReport = generateReport(result, { format: 'text', verbose: true });
-      expect(textReport).toContain('Processed: 10');
-      expect(textReport).toContain('Created:   7');
-      expect(textReport).toContain('Duration:  15.00s');
+      expect(textReport).toContain('Processed:  10');
+      expect(textReport).toContain('Created:    7');
+      expect(textReport).toContain('Needs Info: 0');
+      expect(textReport).toContain('Duration:   15.00s');
       expect(textReport).toContain('PARTIAL');
 
       // JSON report
@@ -369,6 +371,7 @@ describe('E2E: Triage Command', () => {
           created: 4,
           skipped: 1,
           failed: 0,
+          needsInfo: 0,
           durationMs: 5000,
           createdIssues: [
             { asanaTaskGid: '1', githubIssueNumber: 1, githubIssueUrl: 'url1', title: 'T1' },
@@ -379,6 +382,7 @@ describe('E2E: Triage Command', () => {
           created: 2,
           skipped: 0,
           failed: 1,
+          needsInfo: 0,
           durationMs: 3000,
           failures: [
             { asanaTaskGid: '2', title: 'Failed', error: 'Error', retryable: false },

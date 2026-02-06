@@ -20,6 +20,8 @@ import { createAsanaListTool, createAsanaUpdateTool, createGitHubCreateTool, cre
 import { withRetry, handleTriageError, ErrorAggregator, TriageError } from './error-handler.js';
 import { DryRunSimulator, formatDryRunResult, toTriageResult } from './dry-run.js';
 import { ProgressReporter } from './report.js';
+import { generateNeedsInfoComment } from '../../github/update-issue/comment-generator.js';
+import type { NeedsInfoAnalysisResult } from '../../github/update-issue/comment-generator.js';
 
 /**
  * Task processor for triage operations
@@ -70,6 +72,7 @@ export class TaskProcessor {
         created: 0,
         skipped: tasks.length,
         failed: 0,
+        needsInfo: 0,
       });
     }
 
@@ -131,11 +134,14 @@ export class TaskProcessor {
         }
 
         const analysis = analysisResult.data;
+        const isNeedsInfo = analysis.confidence < this.config.confidenceThreshold;
 
-        // Create GitHub issue
+        // Create GitHub issue (for both normal and needs-info tasks)
         const issueResult = await withRetry(
           async () => {
-            const result = await githubTool.createIssueFromTask(task, analysis);
+            const result = isNeedsInfo
+              ? await githubTool.createIssueForNeedsInfo(task, analysis, this.config.needsInfoLabels)
+              : await githubTool.createIssueFromTask(task, analysis);
             if (isFailure(result)) throw result.error;
             return result.data;
           },
@@ -160,19 +166,45 @@ export class TaskProcessor {
           githubIssueNumber: issueResult.data.number,
           githubIssueUrl: issueResult.data.url,
           title: task.name,
+          ...(isNeedsInfo && { needsInfo: true, analysisResult: 'needs-more-info' }),
         };
 
         createdIssues.push(issueInfo);
 
-        // Update Asana task (best effort, don't fail the whole process)
-        await this.updateAsanaTask(
-          asanaUpdateTool,
-          task,
-          issueInfo,
-          processedSectionGid
-        );
+        if (isNeedsInfo) {
+          // Add needs-info comment to the GitHub issue
+          const needsInfoComment = generateNeedsInfoComment({
+            analysisResult: this.determineNeedsInfoResult(analysis),
+            suggestions: this.buildSuggestions(analysis),
+            confidenceLevel: this.getConfidenceLevel(analysis.confidence),
+            confidenceScore: Math.round(analysis.confidence * 100),
+            breakdown: this.estimateBreakdown(analysis),
+          });
 
-        reporter.onTaskCreated(issueInfo);
+          const commentResult = await githubTool.addComment(issueResult.data.number, needsInfoComment);
+          if (isFailure(commentResult) && options.verbose) {
+            reporter.onTaskFailed(task.name, `Warning: needs-info comment failed: ${commentResult.error.message}`);
+          }
+
+          // Update Asana task for needs-info (comment only, no section move)
+          await this.updateAsanaTaskForNeedsInfo(
+            asanaUpdateTool,
+            task,
+            issueInfo
+          );
+
+          reporter.onTaskNeedsInfo(task.name, issueInfo.githubIssueUrl);
+        } else {
+          // Update Asana task (best effort, don't fail the whole process)
+          await this.updateAsanaTask(
+            asanaUpdateTool,
+            task,
+            issueInfo,
+            processedSectionGid
+          );
+
+          reporter.onTaskCreated(issueInfo);
+        }
       } catch (error) {
         const triageError = handleTriageError(error, `Unexpected error processing ${task.name}`);
         errorAggregator.add(task.gid, triageError);
@@ -295,6 +327,98 @@ export class TaskProcessor {
     // Note: Adding tags requires the tag GID, which would need to be looked up
     // This is simplified for the initial implementation
   }
+
+  /**
+   * Update Asana task for needs-info issues
+   */
+  private async updateAsanaTaskForNeedsInfo(
+    asanaUpdateTool: ReturnType<typeof createAsanaUpdateTool>,
+    task: AsanaTask,
+    issueInfo: CreatedIssueInfo
+  ): Promise<void> {
+    // Add comment with GitHub issue link and needs-info note (no section move)
+    await asanaUpdateTool.addComment(
+      task.gid,
+      `GitHub issue created (needs more info): ${issueInfo.githubIssueUrl}\n\nIssue #${issueInfo.githubIssueNumber}\n\nAdditional information has been requested via GitHub comment.`
+    );
+  }
+
+  /**
+   * Determine the specific needs-info analysis result type
+   */
+  private determineNeedsInfoResult(analysis: TaskAnalysis): NeedsInfoAnalysisResult {
+    if (analysis.confidence < 0.2) return 'unclear-requirement';
+    if (analysis.acceptanceCriteria.length === 0) return 'needs-more-info';
+    if (analysis.relatedFiles.length === 0) return 'needs-context';
+    return 'needs-more-info';
+  }
+
+  /**
+   * Build suggestions based on what the analysis is missing
+   */
+  private buildSuggestions(analysis: TaskAnalysis): string[] {
+    const suggestions: string[] = [];
+
+    if (analysis.relatedFiles.length === 0) {
+      suggestions.push('Include file paths, function names, or code snippets related to this issue');
+    }
+
+    if (analysis.acceptanceCriteria.length === 0) {
+      suggestions.push('Define clear acceptance criteria as a checklist of testable conditions');
+    }
+
+    if (!analysis.summary || analysis.summary.length < 50) {
+      suggestions.push('Provide a more detailed description of the expected behavior and current behavior');
+    }
+
+    if (analysis.component === 'general' || !analysis.component) {
+      suggestions.push('Identify the specific component or module this issue affects');
+    }
+
+    if (analysis.issueType === 'bug') {
+      suggestions.push('Provide step-by-step reproduction instructions');
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * Map confidence score to level string
+   */
+  private getConfidenceLevel(confidence: number): string {
+    if (confidence >= 0.85) return 'very_high';
+    if (confidence >= 0.70) return 'high';
+    if (confidence >= 0.50) return 'medium';
+    if (confidence >= 0.30) return 'low';
+    return 'very_low';
+  }
+
+  /**
+   * Estimate confidence breakdown from the analysis
+   */
+  private estimateBreakdown(analysis: TaskAnalysis): {
+    clarity: number;
+    technicalDetail: number;
+    scopeDefinition: number;
+    acceptanceCriteria: number;
+  } {
+    const total = Math.round(analysis.confidence * 100);
+
+    // Estimate breakdown based on available data
+    const hasSummary = analysis.summary && analysis.summary.length > 30;
+    const hasFiles = analysis.relatedFiles.length > 0;
+    const hasComponent = analysis.component && analysis.component !== 'general';
+    const hasCriteria = analysis.acceptanceCriteria.length > 0;
+
+    return {
+      clarity: hasSummary ? Math.min(25, Math.round(total * 0.3)) : Math.round(total * 0.15),
+      technicalDetail: hasFiles && hasComponent
+        ? Math.min(25, Math.round(total * 0.3))
+        : Math.round(total * 0.1),
+      scopeDefinition: hasComponent ? Math.min(25, Math.round(total * 0.25)) : Math.round(total * 0.15),
+      acceptanceCriteria: hasCriteria ? Math.min(25, Math.round(total * 0.3)) : Math.round(total * 0.1),
+    };
+  }
 }
 
 /**
@@ -370,6 +494,7 @@ export async function fetchAndProcessTasks(
       created: 0,
       skipped: 0,
       failed: 0,
+      needsInfo: 0,
     });
   }
 

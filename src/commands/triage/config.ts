@@ -68,6 +68,7 @@ interface RawConfig {
       skip?: string;
       failed?: string;
       processing?: string;
+      needsInfo?: string;
     };
   };
   retry?: {
@@ -131,6 +132,12 @@ function mergeConfig(raw: RawConfig): TriageConfig {
       DEFAULT_TRIAGE_CONFIG.syncedTagName,
     defaultLabels:
       raw.triage?.defaultLabels ?? raw.github?.defaultLabels ?? DEFAULT_TRIAGE_CONFIG.defaultLabels,
+    // Needs info labels
+    needsInfoLabels:
+      raw.triage?.needsInfoLabels ?? DEFAULT_TRIAGE_CONFIG.needsInfoLabels,
+    // Confidence threshold
+    confidenceThreshold:
+      raw.triage?.confidenceThreshold ?? DEFAULT_TRIAGE_CONFIG.confidenceThreshold,
     priorityFieldName: raw.triage?.priorityFieldName ?? DEFAULT_TRIAGE_CONFIG.priorityFieldName,
     componentFieldName: raw.triage?.componentFieldName ?? DEFAULT_TRIAGE_CONFIG.componentFieldName,
     githubIssueFieldName: raw.triage?.githubIssueFieldName ?? DEFAULT_TRIAGE_CONFIG.githubIssueFieldName,
@@ -166,6 +173,10 @@ export function validateConfig(config: TriageConfig): Result<TriageConfig, Error
 
   if (config.retry.maxDelayMs < config.retry.initialDelayMs) {
     errors.push('retry.maxDelayMs must be >= retry.initialDelayMs');
+  }
+
+  if (config.confidenceThreshold < 0 || config.confidenceThreshold > 1) {
+    errors.push('confidenceThreshold must be between 0 and 1');
   }
 
   if (!config.triageSectionName) {

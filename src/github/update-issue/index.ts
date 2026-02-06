@@ -10,7 +10,8 @@ export { updateIssue, addProgressComment } from './update-issue.js';
 export { addLabels, removeLabels, syncLabels } from './labels-manager.js';
 
 // Comment generation
-export { generateProgressComment } from './comment-generator.js';
+export { generateProgressComment, generateNeedsInfoComment } from './comment-generator.js';
+export type { NeedsInfoAnalysisResult, ConfidenceBreakdown, NeedsInfoCommentOptions } from './comment-generator.js';
 
 // Error handling
 export {

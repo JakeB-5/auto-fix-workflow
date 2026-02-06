@@ -44,6 +44,8 @@ export interface TriageResult {
   readonly skipped: number;
   /** Tasks that failed to process */
   readonly failed: number;
+  /** Tasks that need more information */
+  readonly needsInfo: number;
   /** Details of created issues */
   readonly createdIssues?: readonly CreatedIssueInfo[];
   /** Details of failures */
@@ -64,6 +66,10 @@ export interface CreatedIssueInfo {
   readonly githubIssueUrl: string;
   /** Issue title */
   readonly title: string;
+  /** Whether the issue needs additional information */
+  readonly needsInfo?: boolean;
+  /** Analysis result type for needs-info issues */
+  readonly analysisResult?: string;
 }
 
 /**
@@ -246,6 +252,10 @@ export interface TriageConfig {
   readonly componentFieldName: string;
   /** GitHub issue number field name in Asana */
   readonly githubIssueFieldName: string;
+  /** GitHub labels to apply to needs-info issues */
+  readonly needsInfoLabels: readonly string[];
+  /** Confidence threshold (0-1) below which issues are marked as needs-info */
+  readonly confidenceThreshold: number;
   /** Maximum tasks per batch */
   readonly maxBatchSize: number;
   /** Retry configuration */
@@ -264,6 +274,8 @@ export const DEFAULT_TRIAGE_CONFIG: TriageConfig = {
   processedSectionName: 'To Do',
   syncedTagName: 'github-synced',
   defaultLabels: ['auto-fix'],
+  needsInfoLabels: ['needs-info'],
+  confidenceThreshold: 0.5,
   priorityFieldName: 'Priority',
   componentFieldName: 'Component',
   githubIssueFieldName: 'GitHub Issue',

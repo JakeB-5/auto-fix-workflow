@@ -290,17 +290,19 @@ describe('Report Integration', () => {
         created: 8,
         skipped: 1,
         failed: 1,
+        needsInfo: 0,
         durationMs: 5000,
       };
 
       const report = generateReport(result, { format: 'text' });
 
       expect(report).toContain('Triage Report');
-      expect(report).toContain('Processed: 10');
-      expect(report).toContain('Created:   8');
-      expect(report).toContain('Skipped:   1');
-      expect(report).toContain('Failed:    1');
-      expect(report).toContain('Duration:  5.00s');
+      expect(report).toContain('Processed:  10');
+      expect(report).toContain('Created:    8');
+      expect(report).toContain('Skipped:    1');
+      expect(report).toContain('Failed:     1');
+      expect(report).toContain('Needs Info: 0');
+      expect(report).toContain('Duration:   5.00s');
     });
 
     it('should generate JSON report', () => {
@@ -309,6 +311,7 @@ describe('Report Integration', () => {
         created: 5,
         skipped: 0,
         failed: 0,
+        needsInfo: 0,
       };
 
       const report = generateReport(result, { format: 'json' });
@@ -325,6 +328,7 @@ describe('Report Integration', () => {
         created: 2,
         skipped: 1,
         failed: 0,
+        needsInfo: 0,
         createdIssues: [
           {
             asanaTaskGid: '1',
@@ -349,6 +353,7 @@ describe('Report Integration', () => {
         created: 1,
         skipped: 0,
         failed: 1,
+        needsInfo: 0,
         failures: [
           {
             asanaTaskGid: '123',
@@ -371,9 +376,9 @@ describe('Report Integration', () => {
   describe('aggregateResults', () => {
     it('should aggregate multiple results', () => {
       const results = [
-        { processed: 5, created: 4, skipped: 1, failed: 0, durationMs: 1000 },
-        { processed: 3, created: 2, skipped: 0, failed: 1, durationMs: 500 },
-        { processed: 2, created: 2, skipped: 0, failed: 0, durationMs: 300 },
+        { processed: 5, created: 4, skipped: 1, failed: 0, needsInfo: 0, durationMs: 1000 },
+        { processed: 3, created: 2, skipped: 0, failed: 1, needsInfo: 0, durationMs: 500 },
+        { processed: 2, created: 2, skipped: 0, failed: 0, needsInfo: 0, durationMs: 300 },
       ];
 
       const aggregated = aggregateResults(results);
@@ -392,6 +397,7 @@ describe('Report Integration', () => {
           created: 1,
           skipped: 0,
           failed: 0,
+          needsInfo: 0,
           createdIssues: [
             { asanaTaskGid: '1', githubIssueNumber: 1, githubIssueUrl: 'url1', title: 'Issue 1' },
           ],
@@ -401,6 +407,7 @@ describe('Report Integration', () => {
           created: 1,
           skipped: 0,
           failed: 0,
+          needsInfo: 0,
           createdIssues: [
             { asanaTaskGid: '2', githubIssueNumber: 2, githubIssueUrl: 'url2', title: 'Issue 2' },
           ],

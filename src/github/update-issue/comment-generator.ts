@@ -42,6 +42,98 @@ export function generateProgressComment(
 }
 
 /**
+ * Analysis result types for needs-info issues
+ */
+export type NeedsInfoAnalysisResult =
+  | 'needs-more-info'
+  | 'cannot-reproduce'
+  | 'unclear-requirement'
+  | 'needs-context';
+
+/**
+ * Confidence breakdown scores
+ */
+export interface ConfidenceBreakdown {
+  readonly clarity: number;
+  readonly technicalDetail: number;
+  readonly scopeDefinition: number;
+  readonly acceptanceCriteria: number;
+}
+
+/**
+ * Options for generating needs-info comments
+ */
+export interface NeedsInfoCommentOptions {
+  readonly analysisResult: NeedsInfoAnalysisResult;
+  readonly suggestions: readonly string[];
+  readonly confidenceLevel: string;
+  readonly confidenceScore: number;
+  readonly breakdown: ConfidenceBreakdown;
+}
+
+/**
+ * Generate a needs-info comment for a GitHub issue
+ *
+ * Creates a structured comment requesting additional information
+ * based on the analysis results and confidence breakdown.
+ *
+ * @param options - Analysis details for generating the comment
+ * @returns Formatted markdown comment
+ */
+export function generateNeedsInfoComment(options: NeedsInfoCommentOptions): string {
+  const { analysisResult, suggestions, confidenceLevel, confidenceScore, breakdown } = options;
+  const sections: string[] = [];
+
+  // Header
+  sections.push('## Auto-Fix Analysis: Additional Information Needed\n');
+
+  // Status summary
+  const resultLabels: Record<NeedsInfoAnalysisResult, string> = {
+    'needs-more-info': 'More information required',
+    'cannot-reproduce': 'Cannot reproduce the issue',
+    'unclear-requirement': 'Requirements are unclear',
+    'needs-context': 'Additional context needed',
+  };
+  sections.push(`**Analysis Result:** ${resultLabels[analysisResult]}`);
+  sections.push(`**Confidence:** ${confidenceLevel} (${confidenceScore}/100)\n`);
+
+  // Breakdown table
+  sections.push('### Confidence Breakdown\n');
+  sections.push('| Category | Score | Status |');
+  sections.push('|----------|-------|--------|');
+  sections.push(`| Clarity | ${breakdown.clarity}/25 | ${getStatusIcon(breakdown.clarity, 25)} |`);
+  sections.push(`| Technical Detail | ${breakdown.technicalDetail}/25 | ${getStatusIcon(breakdown.technicalDetail, 25)} |`);
+  sections.push(`| Scope Definition | ${breakdown.scopeDefinition}/25 | ${getStatusIcon(breakdown.scopeDefinition, 25)} |`);
+  sections.push(`| Acceptance Criteria | ${breakdown.acceptanceCriteria}/25 | ${getStatusIcon(breakdown.acceptanceCriteria, 25)} |\n`);
+
+  // Suggestions as checklist
+  if (suggestions.length > 0) {
+    sections.push('### Action Items\n');
+    sections.push('Please provide the following information:\n');
+    for (const suggestion of suggestions) {
+      sections.push(`- [ ] ${suggestion}`);
+    }
+    sections.push('');
+  }
+
+  // Footer
+  sections.push('---');
+  sections.push('> When the requested information has been provided, remove the `needs-info` label to trigger reprocessing.');
+
+  return sections.join('\n');
+}
+
+/**
+ * Get status icon based on score ratio
+ */
+function getStatusIcon(score: number, max: number): string {
+  const ratio = score / max;
+  if (ratio >= 0.7) return 'OK';
+  if (ratio >= 0.4) return 'Needs improvement';
+  return 'Insufficient';
+}
+
+/**
  * Format a camelCase or snake_case key to Title Case
  */
 function formatKey(key: string): string {

@@ -47,13 +47,13 @@ export async function triageCommand(
     // Handle help request
     if (error instanceof HelpRequestedError) {
       console.log(error.helpText);
-      return ok({ processed: 0, created: 0, skipped: 0, failed: 0 });
+      return ok({ processed: 0, created: 0, skipped: 0, failed: 0, needsInfo: 0 });
     }
 
     // Handle version request
     if (error instanceof VersionRequestedError) {
       console.log(error.version);
-      return ok({ processed: 0, created: 0, skipped: 0, failed: 0 });
+      return ok({ processed: 0, created: 0, skipped: 0, failed: 0, needsInfo: 0 });
     }
 
     return err(error);
@@ -137,7 +137,7 @@ async function runInteractiveMode(
 
   if (tasks.length === 0) {
     console.log('No tasks found in triage section.');
-    return ok({ processed: 0, created: 0, skipped: 0, failed: 0 });
+    return ok({ processed: 0, created: 0, skipped: 0, failed: 0, needsInfo: 0 });
   }
 
   // Analyze tasks for selection UI
@@ -151,12 +151,12 @@ async function runInteractiveMode(
     selectedTasks = await selectTasks(tasks, analyses);
   } catch (error) {
     displayCancelled();
-    return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0 });
+    return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0, needsInfo: 0 });
   }
 
   if (selectedTasks.length === 0) {
     console.log('No tasks selected.');
-    return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0 });
+    return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0, needsInfo: 0 });
   }
 
   // Process selected tasks
@@ -215,7 +215,7 @@ async function runBatchMode(
 
   if (tasks.length === 0) {
     console.log('No tasks found in triage section.');
-    return ok({ processed: 0, created: 0, skipped: 0, failed: 0 });
+    return ok({ processed: 0, created: 0, skipped: 0, failed: 0, needsInfo: 0 });
   }
 
   // Confirm batch processing
@@ -227,7 +227,7 @@ async function runBatchMode(
 
     if (!confirmResult.confirmed) {
       displayCancelled();
-      return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0 });
+      return ok({ processed: 0, created: 0, skipped: tasks.length, failed: 0, needsInfo: 0 });
     }
 
     // Apply any modified options
@@ -307,7 +307,7 @@ async function runSingleMode(
 
     if (!confirmed) {
       displayCancelled();
-      return ok({ processed: 0, created: 0, skipped: 1, failed: 0 });
+      return ok({ processed: 0, created: 0, skipped: 1, failed: 0, needsInfo: 0 });
     }
   }
 

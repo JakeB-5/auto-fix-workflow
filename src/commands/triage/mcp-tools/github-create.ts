@@ -104,6 +104,24 @@ export class GitHubCreateTool {
   }
 
   /**
+   * Create a GitHub issue for a task that needs more information
+   */
+  async createIssueForNeedsInfo(
+    task: AsanaTask,
+    analysis: TaskAnalysis,
+    needsInfoLabels: readonly string[] = ['needs-info']
+  ): Promise<Result<GitHubIssueResult, Error>> {
+    const body = this.buildNeedsInfoIssueBody(task, analysis);
+    const labels = [...this.buildLabels(analysis), ...needsInfoLabels];
+
+    return this.createIssue({
+      title: task.name,
+      body,
+      labels,
+    });
+  }
+
+  /**
    * Build the GitHub issue body from task and analysis
    */
   private buildIssueBody(task: AsanaTask, analysis: TaskAnalysis): string {
@@ -145,6 +163,74 @@ export class GitHubCreateTool {
     }
 
     // Original task notes (if different from summary)
+    if (task.notes && task.notes !== analysis.summary) {
+      sections.push('## Original Description');
+      sections.push('');
+      sections.push('<details>');
+      sections.push('<summary>Click to expand</summary>');
+      sections.push('');
+      sections.push(task.notes);
+      sections.push('');
+      sections.push('</details>');
+      sections.push('');
+    }
+
+    // Source reference
+    sections.push('---');
+    sections.push('');
+    sections.push(`> Source: [Asana Task](${task.permalinkUrl})`);
+
+    return sections.join('\n');
+  }
+
+  /**
+   * Build the GitHub issue body for a needs-info task
+   */
+  private buildNeedsInfoIssueBody(task: AsanaTask, analysis: TaskAnalysis): string {
+    const sections: string[] = [];
+
+    // Needs-info banner
+    sections.push('> **Note**: This issue was created from an Asana task that requires additional information.');
+    sections.push('> Please review the action items in the comments and provide the requested details.');
+    sections.push('');
+
+    // Summary section
+    sections.push('## Summary');
+    sections.push('');
+    sections.push(analysis.summary || task.notes || 'No description provided.');
+    sections.push('');
+
+    // Context section with confidence
+    sections.push('## Context');
+    sections.push('');
+    sections.push(`- **Type**: ${analysis.issueType}`);
+    sections.push(`- **Priority**: ${analysis.priority}`);
+    sections.push(`- **Component**: ${analysis.component || 'Unknown'}`);
+    sections.push(`- **Confidence**: ${Math.round(analysis.confidence * 100)}%`);
+    sections.push(`- **Status**: Needs additional information`);
+    sections.push('');
+
+    // Related files (if any found)
+    if (analysis.relatedFiles.length > 0) {
+      sections.push('## Related Files');
+      sections.push('');
+      for (const file of analysis.relatedFiles) {
+        sections.push(`- \`${file}\``);
+      }
+      sections.push('');
+    }
+
+    // Acceptance criteria (may be incomplete)
+    if (analysis.acceptanceCriteria.length > 0) {
+      sections.push('## Acceptance Criteria (Preliminary)');
+      sections.push('');
+      for (const criterion of analysis.acceptanceCriteria) {
+        sections.push(`- [ ] ${criterion}`);
+      }
+      sections.push('');
+    }
+
+    // Original task notes
     if (task.notes && task.notes !== analysis.summary) {
       sections.push('## Original Description');
       sections.push('');

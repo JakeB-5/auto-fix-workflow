@@ -326,6 +326,7 @@ async function processTasks(
       created: createdIssues.length,
       skipped,
       failed: failures.length,
+      needsInfo: 0,
       createdIssues,
       failures,
       durationMs: Date.now() - startTime,

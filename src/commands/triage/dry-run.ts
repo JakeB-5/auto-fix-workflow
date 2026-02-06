@@ -315,6 +315,7 @@ export function toTriageResult(dryRunResult: DryRunResult): TriageResult {
     created: dryRunResult.summary.issuesWouldCreate,
     skipped: 0,
     failed: 0,
+    needsInfo: 0,
     durationMs: 0,
   };
 }

@@ -59,14 +59,15 @@ function generateTextReport(result: TriageResult, options: ReportOptions): strin
 
   // Summary
   lines.push('Summary:');
-  lines.push(`  Processed: ${result.processed}`);
-  lines.push(`  Created:   ${result.created}`);
-  lines.push(`  Skipped:   ${result.skipped}`);
-  lines.push(`  Failed:    ${result.failed}`);
+  lines.push(`  Processed:  ${result.processed}`);
+  lines.push(`  Created:    ${result.created}`);
+  lines.push(`  Skipped:    ${result.skipped}`);
+  lines.push(`  Failed:     ${result.failed}`);
+  lines.push(`  Needs Info: ${result.needsInfo}`);
 
   if (result.durationMs !== undefined) {
     const seconds = (result.durationMs / 1000).toFixed(2);
-    lines.push(`  Duration:  ${seconds}s`);
+    lines.push(`  Duration:   ${seconds}s`);
   }
 
   lines.push('');
@@ -118,6 +119,7 @@ function generateJsonReport(result: TriageResult, _options: ReportOptions): stri
       created: result.created,
       skipped: result.skipped,
       failed: result.failed,
+      needsInfo: result.needsInfo,
       durationMs: result.durationMs,
     },
     createdIssues: result.createdIssues ?? [],
@@ -146,6 +148,7 @@ function generateMarkdownReport(result: TriageResult, options: ReportOptions): s
     `| Created | ${result.created} |`,
     `| Skipped | ${result.skipped} |`,
     `| Failed | ${result.failed} |`,
+    `| Needs Info | ${result.needsInfo} |`,
   ];
 
   if (result.durationMs !== undefined) {
@@ -226,6 +229,7 @@ export class ProgressReporter {
   private created = 0;
   private skipped = 0;
   private failed = 0;
+  private needsInfo = 0;
   private readonly total: number;
   private readonly verbose: boolean;
 
@@ -287,6 +291,20 @@ export class ProgressReporter {
   }
 
   /**
+   * Report task needs info
+   */
+  onTaskNeedsInfo(taskName: string, issueUrl: string): void {
+    this.processed++;
+    this.needsInfo++;
+
+    if (this.verbose) {
+      console.log(`  -> Needs Info: ${taskName} (${issueUrl})`);
+    } else {
+      this.updateProgressLine();
+    }
+  }
+
+  /**
    * Update progress line (non-verbose mode)
    */
   private updateProgressLine(): void {
@@ -296,6 +314,7 @@ export class ProgressReporter {
     process.stdout.write(
       `\rProgress: ${this.processed}/${this.total} (${percent}%) | ` +
       `Created: ${this.created} | Skipped: ${this.skipped} | Failed: ${this.failed} | ` +
+      `Needs Info: ${this.needsInfo} | ` +
       `Time: ${elapsed}s`
     );
 
@@ -313,6 +332,7 @@ export class ProgressReporter {
       created: this.created,
       skipped: this.skipped,
       failed: this.failed,
+      needsInfo: this.needsInfo,
       durationMs: Date.now() - this.startTime,
     };
   }
@@ -341,6 +361,7 @@ export function aggregateResults(results: readonly TriageResult[]): TriageResult
       created: acc.created + result.created,
       skipped: acc.skipped + result.skipped,
       failed: acc.failed + result.failed,
+      needsInfo: acc.needsInfo + result.needsInfo,
       durationMs: (acc.durationMs ?? 0) + (result.durationMs ?? 0),
       createdIssues: [
         ...(acc.createdIssues ?? []),
@@ -356,6 +377,7 @@ export function aggregateResults(results: readonly TriageResult[]): TriageResult
       created: 0,
       skipped: 0,
       failed: 0,
+      needsInfo: 0,
       durationMs: 0,
       createdIssues: [] as CreatedIssueInfo[],
       failures: [] as TriageFailure[],
