@@ -6,7 +6,8 @@ export default defineConfig({
     environment: 'node',
     isolate: false,
     fileParallelism: false,
-    pool: 'vmThreads',
+    // vmThreads for local Node v24 dev; forks for CI (Node 20/22) where vmThreads has timer issues
+    pool: process.env.CI ? 'forks' : 'vmThreads',
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
     coverage: {
