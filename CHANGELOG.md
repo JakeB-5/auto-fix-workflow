@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.24] - 2026-02-06
+
+### Documentation
+
+- **Complete CLI reference**: Updated README and SETUP docs to match actual source code
+  - `autofix` command: Added 7 missing flags (`--all`, `--max-parallel`, `--max-retries`, `--labels`, `--exclude-labels`, `--base-branch`, `--verbose`)
+  - `triage` command: Added 5 missing flags (`--mode`, `--project`, `--section`, `--priority`, `--yes`) with short aliases
+  - `init` command: Added short flags (`-n`, `-f`, `-s`) to Korean docs
+  - Environment variables: Expanded from 4 to 25+ across 6 categories
+  - Added 9-stage autofix pipeline section with branch strategy diagram
+  - Added Prerequisites section to SETUP docs (Claude CLI, Node.js)
+  - Fixed duplicate Quick Start headings
+
+### Fixed
+
+- **MCP tool names in docs**: Corrected tool names to match source code
+  - `github_get_issue` → `get_github_issue`
+  - `github_update_issue` → `update_github_issue`
+  - `github_list_issues` → `list_issues`
+  - Added missing `add_issue_progress_comment` tool
+  - Restructured Git/Workflow tools as internal (not exposed via MCP)
+
+## [0.4.23] - 2026-02-06
+
+### Changed
+
+- **Codebase restructuring**: Comprehensive refactoring for modularity and type safety
+  - Reorganized module structure for better separation of concerns
+
+### Fixed
+
+- **Pipeline git push**: Add `git push` after commit stage for PR creation
+
+## [0.4.22] - 2026-02-05
+
+### Added
+
+- **Install deps stage**: New `install_deps` pipeline stage for worktree dependency installation
+
+## [0.4.21] - 2026-02-05
+
+### Fixed
+
+- **Check failure info**: Include detailed check failure information in error messages
+
+## [0.4.20] - 2026-02-05
+
+### Fixed
+
+- **Existing branch handling**: Handle existing branch and verify AI fix changes before committing
+- **Test mocks**: Fix mocks to return uncommitted changes for new verification logic
+
+## [0.4.19] - 2026-02-05
+
+### Fixed
+
+- **Config loading**: Load configuration from `.auto-fix.yaml` file in autofix command
+
+## [0.4.18] - 2026-02-05
+
+### Added
+
+- **Default PR target**: Use `autofixing` branch as default PR target for autofix command
+
+### Fixed
+
+- **Test isolation**: Resolve vitest mock isolation issues in Node.js v24
+
+## [0.4.17] - 2026-02-05
+
+### Fixed
+
+- **Asana task update**: Fixed section move and tag addition not working (duplicate of 0.4.16 release fix)
+
 ## [0.4.16] - 2026-02-05
 
 ### Fixed
@@ -392,6 +466,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated npm publishing
 - GitHub release automation
 
+[0.4.24]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.23...v0.4.24
+[0.4.23]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.22...v0.4.23
+[0.4.22]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.21...v0.4.22
+[0.4.21]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.20...v0.4.21
+[0.4.20]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.19...v0.4.20
+[0.4.19]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.18...v0.4.19
+[0.4.18]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.17...v0.4.18
+[0.4.17]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.16...v0.4.17
 [0.4.16]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.15...v0.4.16
 [0.4.15]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.14...v0.4.15
 [0.4.14]: https://github.com/JakeB-5/auto-fix-workflow/compare/v0.4.13...v0.4.14
