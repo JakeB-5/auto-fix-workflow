@@ -733,6 +733,8 @@ describe('createIssue', () => {
     });
 
     it('should retry on retryable errors', async () => {
+      vi.useFakeTimers();
+
       const params: CreateIssueParams = {
         owner: 'test-owner',
         repo: 'test-repo',
@@ -764,16 +766,25 @@ describe('createIssue', () => {
           },
         });
 
-      const result = await createIssue(params, {
+      const resultPromise = createIssue(params, {
         token: 'test-token',
         maxRetries: 3,
       });
 
+      // Advance fake timers to skip retry delays (1s + 2s)
+      await vi.runAllTimersAsync();
+
+      const result = await resultPromise;
+
       expect(result.success).toBe(true);
       expect(mockCreate).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
 
     it('should stop retrying after max attempts', async () => {
+      vi.useFakeTimers();
+
       const params: CreateIssueParams = {
         owner: 'test-owner',
         repo: 'test-repo',
@@ -786,13 +797,20 @@ describe('createIssue', () => {
         message: 'Timeout',
       });
 
-      const result = await createIssue(params, {
+      const resultPromise = createIssue(params, {
         token: 'test-token',
         maxRetries: 3,
       });
 
+      // Advance fake timers to skip retry delays (1s + 2s)
+      await vi.runAllTimersAsync();
+
+      const result = await resultPromise;
+
       expect(result.success).toBe(false);
       expect(mockCreate).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
 
     it('should not retry on non-retryable errors', async () => {

@@ -65,6 +65,11 @@ describe('client', () => {
   });
 
   describe('invokeClaudeCLI', () => {
+    // Use fake timers so invokeClaudeCLI's internal setTimeout is controlled.
+    // Emit mock events synchronously after invokeClaudeCLI() returns —
+    // listeners are already set up by then, so synchronous emission is safe
+    // and avoids process.nextTick / setTimeout(0) portability issues across
+    // vitest pools (vmThreads vs forks) and CI environments.
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -82,11 +87,9 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      // Simulate successful execution
-      process.nextTick(() => {
-        mockProcess.stdout?.emit('data', Buffer.from('{"type":"result"}'));
-        mockProcess.emit('close', 0);
-      });
+      // Emit events synchronously — listeners are already set up
+      mockProcess.stdout?.emit('data', Buffer.from('{"type":"result"}'));
+      mockProcess.emit('close', 0);
 
       const result = await resultPromise;
 
@@ -114,10 +117,8 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.stdout?.emit('data', Buffer.from('output'));
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.stdout?.emit('data', Buffer.from('output'));
+      mockProcess.emit('close', 0);
 
       const result = await resultPromise;
 
@@ -142,9 +143,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -163,9 +162,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -184,9 +181,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -207,9 +202,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -225,9 +218,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -248,11 +239,9 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.stdout?.emit('data', Buffer.from('chunk1\n'));
-        mockProcess.stdout?.emit('data', Buffer.from('chunk2\n'));
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.stdout?.emit('data', Buffer.from('chunk1\n'));
+      mockProcess.stdout?.emit('data', Buffer.from('chunk2\n'));
+      mockProcess.emit('close', 0);
 
       const result = await resultPromise;
 
@@ -270,10 +259,8 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.stderr?.emit('data', Buffer.from('error message'));
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.stderr?.emit('data', Buffer.from('error message'));
+      mockProcess.emit('close', 0);
 
       const result = await resultPromise;
 
@@ -290,13 +277,11 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.stdout?.emit(
-          'data',
-          Buffer.from('{"usage":{"input_tokens":100}}')
-        );
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.stdout?.emit(
+        'data',
+        Buffer.from('{"usage":{"input_tokens":100}}')
+      );
+      mockProcess.emit('close', 0);
 
       const result = await resultPromise;
 
@@ -320,9 +305,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -340,11 +323,9 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        const error: NodeJS.ErrnoException = new Error('spawn ENOENT');
-        error.code = 'ENOENT';
-        mockProcess.emit('error', error);
-      });
+      const error: NodeJS.ErrnoException = new Error('spawn ENOENT');
+      error.code = 'ENOENT';
+      mockProcess.emit('error', error);
 
       const result = await resultPromise;
 
@@ -362,9 +343,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('error', new Error('Spawn failed'));
-      });
+      mockProcess.emit('error', new Error('Spawn failed'));
 
       const result = await resultPromise;
 
@@ -382,10 +361,8 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.stdout?.emit('data', Buffer.from('error output'));
-        mockProcess.emit('close', 1);
-      });
+      mockProcess.stdout?.emit('data', Buffer.from('error output'));
+      mockProcess.emit('close', 1);
 
       const result = await resultPromise;
 
@@ -406,9 +383,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -425,9 +400,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('error', new Error('Test error'));
-      });
+      mockProcess.emit('error', new Error('Test error'));
 
       await resultPromise;
 
@@ -441,9 +414,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', null);
-      });
+      mockProcess.emit('close', null);
 
       const result = await resultPromise;
 
@@ -463,9 +434,7 @@ describe('client', () => {
 
       const resultPromise = invokeClaudeCLI(options);
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
+      mockProcess.emit('close', 0);
 
       await resultPromise;
 
@@ -478,16 +447,17 @@ describe('client', () => {
 
   describe('safeInvokeClaude', () => {
     // sleep is mocked via vi.mock('../timer-utils.js') to resolve immediately.
-    // Use setTimeout(fn, 0) instead of process.nextTick for mock event emission
-    // because process.nextTick is unreliable in vitest's vmThreads pool.
+    // Use queueMicrotask instead of setTimeout(0) for mock event emission
+    // because queueMicrotask is NOT affected by fake timers and fires reliably
+    // across all vitest pools (vmThreads, forks) and CI environments.
 
-    /** Helper: create a spawn mock that emits events via setTimeout(0) */
+    /** Helper: create a spawn mock that emits events via queueMicrotask */
     function mockSpawnWithEvents(
       eventsFn: (proc: ReturnType<typeof createMockProcess>) => void
     ) {
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-        setTimeout(() => eventsFn(proc), 0);
+        queueMicrotask(() => eventsFn(proc));
         return proc;
       });
     }
@@ -520,7 +490,7 @@ describe('client', () => {
         const proc = createMockProcess();
         const currentAttempt = ++attempt;
 
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
@@ -531,7 +501,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        }, 0);
+        });
 
         return proc;
       });
@@ -553,7 +523,7 @@ describe('client', () => {
         const proc = createMockProcess();
         const currentAttempt = ++attempt;
 
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
@@ -564,7 +534,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        }, 0);
+        });
 
         return proc;
       });
@@ -585,7 +555,7 @@ describe('client', () => {
         const proc = createMockProcess();
         const currentAttempt = ++attempt;
 
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (currentAttempt < 3) {
             proc.stderr?.emit('data', Buffer.from('Rate limit'));
             proc.emit('close', 1);
@@ -593,7 +563,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        }, 0);
+        });
 
         return proc;
       });
@@ -615,11 +585,11 @@ describe('client', () => {
 
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-        setTimeout(() => {
+        queueMicrotask(() => {
           const error: NodeJS.ErrnoException = new Error('spawn ENOENT');
           error.code = 'ENOENT';
           proc.emit('error', error);
-        }, 0);
+        });
         return proc;
       });
 
@@ -657,9 +627,9 @@ describe('client', () => {
 
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-        setTimeout(() => {
+        queueMicrotask(() => {
           proc.emit('error', new Error('Persistent error'));
-        }, 0);
+        });
         return proc;
       });
 
@@ -680,10 +650,10 @@ describe('client', () => {
 
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-        setTimeout(() => {
+        queueMicrotask(() => {
           proc.stderr?.emit('data', Buffer.from('Rate limit'));
           proc.emit('close', 1);
-        }, 0);
+        });
         return proc;
       });
 
@@ -703,7 +673,7 @@ describe('client', () => {
         const proc = createMockProcess();
         const currentAttempt = ++attempt;
 
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
@@ -714,7 +684,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        }, 0);
+        });
 
         return proc;
       });
