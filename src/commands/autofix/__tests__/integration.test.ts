@@ -9,7 +9,7 @@ import type { AutofixOptions } from '../types.js';
 
 // Mock all external dependencies
 vi.mock('../mcp-tools/github-issues.js', () => ({
-  GitHubIssuesTool: vi.fn().mockImplementation(() => ({
+  GitHubIssuesTool: vi.fn().mockImplementation(function() { return {
     fetchIssues: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -22,11 +22,11 @@ vi.mock('../mcp-tools/github-issues.js', () => ({
         hasMore: false,
       },
     }),
-  })),
+  }; }),
 }));
 
 vi.mock('../mcp-tools/worktree.js', () => ({
-  WorktreeTool: vi.fn().mockImplementation(() => ({
+  WorktreeTool: vi.fn().mockImplementation(function() { return {
     create: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -42,11 +42,11 @@ vi.mock('../mcp-tools/worktree.js', () => ({
     list: vi.fn().mockResolvedValue({ success: true, data: [] }),
     // Return modified files for git status --porcelain to pass hasUncommittedChanges check
     execInWorktree: vi.fn().mockResolvedValue({ success: true, data: { stdout: 'M src/test.ts', stderr: '' } }),
-  })),
+  }; }),
 }));
 
 vi.mock('../mcp-tools/run-checks.js', () => ({
-  RunChecksTool: vi.fn().mockImplementation(() => ({
+  RunChecksTool: vi.fn().mockImplementation(function() { return {
     runChecks: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -56,11 +56,11 @@ vi.mock('../mcp-tools/run-checks.js', () => ({
         totalDurationMs: 100,
       },
     }),
-  })),
+  }; }),
 }));
 
 vi.mock('../mcp-tools/create-pr.js', () => ({
-  CreatePRTool: vi.fn().mockImplementation(() => ({
+  CreatePRTool: vi.fn().mockImplementation(function() { return {
     createPRFromIssues: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -81,19 +81,19 @@ vi.mock('../mcp-tools/create-pr.js', () => ({
         deletions: 0,
       },
     }),
-  })),
+  }; }),
 }));
 
 vi.mock('../mcp-tools/update-issue.js', () => ({
-  UpdateIssueTool: vi.fn().mockImplementation(() => ({
+  UpdateIssueTool: vi.fn().mockImplementation(function() { return {
     markFixed: vi.fn().mockResolvedValue({ success: true }),
     markInProgress: vi.fn().mockResolvedValue({ success: true }),
     markFailed: vi.fn().mockResolvedValue({ success: true }),
-  })),
+  }; }),
 }));
 
 vi.mock('../ai-integration.js', () => ({
-  AIIntegration: vi.fn().mockImplementation(() => ({
+  AIIntegration: vi.fn().mockImplementation(function() { return {
     analyzeGroup: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -114,7 +114,7 @@ vi.mock('../ai-integration.js', () => ({
         commitMessage: 'fix: test',
       },
     }),
-  })),
+  }; }),
 }));
 
 // Helper to create mock issue

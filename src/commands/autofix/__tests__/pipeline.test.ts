@@ -1,108 +1,18 @@
 /**
  * @module commands/autofix/__tests__/pipeline.test
  * @description Tests for ProcessingPipeline
+ *
+ * Strategy: Instead of mocking tool constructors (broken in Vitest 4.x with arrow functions),
+ * we inject mock stage objects via the ProcessingPipeline constructor's `stages` parameter.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ProcessingPipeline, createPipeline, type PipelineConfig } from '../pipeline.js';
-import type { IssueGroup, Issue, Config, GroupBy } from '../../../common/types/index.js';
-import type { PipelineStage, PipelineContext } from '../types.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ProcessingPipeline, createPipeline, type PipelineConfig, type PipelineStages } from '../pipeline.js';
+import type { IssueGroup, Issue, Config, GroupBy, WorktreeInfo, CheckResult, PullRequest } from '../../../common/types/index.js';
+import type { PipelineStage, PipelineContext, AIAnalysisResult, AIFixResult } from '../types.js';
 
-// Mock dependencies
-vi.mock('../mcp-tools/worktree.js', () => ({
-  WorktreeTool: vi.fn().mockImplementation(() => ({
-    create: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        path: '/test/worktree',
-        branch: 'fix/test',
-        status: 'ready',
-        issueNumbers: [1],
-        createdAt: new Date(),
-        lastActivityAt: new Date(),
-      },
-    }),
-    remove: vi.fn().mockResolvedValue({ success: true, data: undefined }),
-    // Return modified files for git status --porcelain to pass hasUncommittedChanges check
-    execInWorktree: vi.fn().mockResolvedValue({ success: true, data: { stdout: 'M src/test.ts', stderr: '' } }),
-  })),
-}));
+// ── Mock Data Factories ──────────────────────────────────────────────
 
-vi.mock('../mcp-tools/run-checks.js', () => ({
-  RunChecksTool: vi.fn().mockImplementation(() => ({
-    runChecks: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        passed: true,
-        results: [
-          { check: 'lint', passed: true, status: 'passed', durationMs: 100 },
-          { check: 'typecheck', passed: true, status: 'passed', durationMs: 200 },
-          { check: 'test', passed: true, status: 'passed', durationMs: 300 },
-        ],
-        attempt: 1,
-        totalDurationMs: 600,
-      },
-    }),
-  })),
-}));
-
-vi.mock('../mcp-tools/create-pr.js', () => ({
-  CreatePRTool: vi.fn().mockImplementation(() => ({
-    createPRFromIssues: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        number: 123,
-        title: 'fix: test issue',
-        body: 'Test PR body',
-        state: 'open',
-        headBranch: 'fix/test',
-        baseBranch: 'main',
-        linkedIssues: [1],
-        labels: ['auto-fix'],
-        reviewers: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        url: 'https://github.com/test/repo/pull/123',
-        changedFiles: 1,
-        additions: 10,
-        deletions: 5,
-      },
-    }),
-  })),
-}));
-
-vi.mock('../mcp-tools/update-issue.js', () => ({
-  UpdateIssueTool: vi.fn().mockImplementation(() => ({
-    markFixed: vi.fn().mockResolvedValue({ success: true, data: { issueNumber: 1, updated: true } }),
-  })),
-}));
-
-vi.mock('../ai-integration.js', () => ({
-  AIIntegration: vi.fn().mockImplementation(() => ({
-    analyzeGroup: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        issues: [],
-        filesToModify: ['src/test.ts'],
-        rootCause: 'Test root cause',
-        suggestedFix: 'Test approach',
-        confidence: 0.9,
-        complexity: 'low',
-      },
-    }),
-    applyFix: vi.fn().mockResolvedValue({
-      success: true,
-      data: {
-        filesModified: ['src/test.ts'],
-        summary: 'Test fix applied',
-        success: true,
-        commitMessage: 'fix: test issue',
-      },
-    }),
-  })),
-}));
-
-// Mock issue factory
 function createMockIssue(number: number): Issue {
   return {
     number,
@@ -127,7 +37,6 @@ function createMockIssue(number: number): Issue {
   };
 }
 
-// Mock group factory
 function createMockGroup(id: string, issueNumbers: number[]): IssueGroup {
   return {
     id,
@@ -142,7 +51,6 @@ function createMockGroup(id: string, issueNumbers: number[]): IssueGroup {
   };
 }
 
-// Mock config
 function createMockConfig(): Config {
   return {
     github: {
@@ -168,12 +76,153 @@ function createMockConfig(): Config {
   };
 }
 
+// ── Mock Worktree Info ───────────────────────────────────────────────
+
+const mockWorktreeInfo: WorktreeInfo = {
+  path: '/test/worktree',
+  branch: 'fix/test',
+  status: 'ready',
+  issueNumbers: [1],
+  createdAt: new Date(),
+  lastActivityAt: new Date(),
+};
+
+// ── Mock Check Result ────────────────────────────────────────────────
+
+const mockCheckResult: CheckResult = {
+  passed: true,
+  results: [
+    { check: 'lint', passed: true, status: 'passed', durationMs: 100 },
+    { check: 'typecheck', passed: true, status: 'passed', durationMs: 200 },
+    { check: 'test', passed: true, status: 'passed', durationMs: 300 },
+  ],
+  attempt: 1,
+  totalDurationMs: 600,
+};
+
+// ── Mock Analysis Result ─────────────────────────────────────────────
+
+const mockAnalysisResult: AIAnalysisResult = {
+  issues: [],
+  filesToModify: ['src/test.ts'],
+  rootCause: 'Test root cause',
+  suggestedFix: 'Test approach',
+  confidence: 0.9,
+  complexity: 'low',
+};
+
+// ── Mock Fix Result ──────────────────────────────────────────────────
+
+const mockFixResult: AIFixResult = {
+  filesModified: ['src/test.ts'],
+  summary: 'Test fix applied',
+  success: true,
+  commitMessage: 'fix: test issue',
+};
+
+// ── Mock PR ──────────────────────────────────────────────────────────
+
+const mockPR: PullRequest = {
+  number: 123,
+  title: 'fix: test issue',
+  body: 'Test PR body',
+  state: 'open',
+  headBranch: 'fix/test',
+  baseBranch: 'main',
+  linkedIssues: [1],
+  labels: ['auto-fix'],
+  reviewers: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  url: 'https://github.com/test/repo/pull/123',
+  changedFiles: 1,
+  additions: 10,
+  deletions: 5,
+};
+
+// ── Mock Stage Factory ───────────────────────────────────────────────
+
+function createMockStages(overrides: Partial<{
+  worktreeExecute: ReturnType<typeof vi.fn>;
+  worktreeCleanup: ReturnType<typeof vi.fn>;
+  worktreeHasUncommittedChanges: ReturnType<typeof vi.fn>;
+  worktreeExecInWorktree: ReturnType<typeof vi.fn>;
+  analysisExecute: ReturnType<typeof vi.fn>;
+  fixExecute: ReturnType<typeof vi.fn>;
+  fixVerifyChanges: ReturnType<typeof vi.fn>;
+  checkExecute: ReturnType<typeof vi.fn>;
+  checkInstallDependencies: ReturnType<typeof vi.fn>;
+  checkFormatCheckFailures: ReturnType<typeof vi.fn>;
+  commitExecute: ReturnType<typeof vi.fn>;
+  prExecute: ReturnType<typeof vi.fn>;
+  prUpdateIssues: ReturnType<typeof vi.fn>;
+}> = {}): PipelineStages {
+  return {
+    worktree: {
+      stageName: 'worktree_create',
+      execute: overrides.worktreeExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: mockWorktreeInfo,
+      }),
+      cleanup: overrides.worktreeCleanup ?? vi.fn().mockResolvedValue(undefined),
+      hasUncommittedChanges: overrides.worktreeHasUncommittedChanges ?? vi.fn().mockResolvedValue(true),
+      execInWorktree: overrides.worktreeExecInWorktree ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: { stdout: 'M src/test.ts', stderr: '' },
+      }),
+    } as any,
+    analysis: {
+      stageName: 'ai_analysis',
+      execute: overrides.analysisExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: mockAnalysisResult,
+      }),
+    } as any,
+    fix: {
+      stageName: 'ai_fix',
+      execute: overrides.fixExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: mockFixResult,
+      }),
+      verifyChanges: overrides.fixVerifyChanges ?? vi.fn().mockResolvedValue(true),
+    } as any,
+    check: {
+      stageName: 'checks',
+      execute: overrides.checkExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: mockCheckResult,
+      }),
+      installDependencies: overrides.checkInstallDependencies ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: undefined,
+      }),
+      formatCheckFailures: overrides.checkFormatCheckFailures ?? vi.fn().mockReturnValue('[lint] failed: Lint errors'),
+    } as any,
+    commit: {
+      stageName: 'commit',
+      execute: overrides.commitExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: undefined,
+      }),
+    } as any,
+    pr: {
+      stageName: 'pr_create',
+      execute: overrides.prExecute ?? vi.fn().mockResolvedValue({
+        success: true,
+        data: mockPR,
+      }),
+      updateIssues: overrides.prUpdateIssues ?? vi.fn().mockResolvedValue(undefined),
+    } as any,
+  };
+}
+
+// ── Tests ────────────────────────────────────────────────────────────
+
 describe('ProcessingPipeline', () => {
   let pipelineConfig: PipelineConfig;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetModules();
 
     pipelineConfig = {
       config: createMockConfig(),
@@ -186,14 +235,16 @@ describe('ProcessingPipeline', () => {
 
   describe('constructor', () => {
     it('should create pipeline with config', () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       expect(pipeline).toBeInstanceOf(ProcessingPipeline);
     });
   });
 
   describe('processGroup', () => {
     it('should process group through all stages', async () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const stagesVisited: PipelineStage[] = [];
@@ -210,36 +261,34 @@ describe('ProcessingPipeline', () => {
     });
 
     it('should track stage changes', async () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
-      const stages: PipelineStage[] = [];
+      const visitedStages: PipelineStage[] = [];
       pipeline.onStageChange((stage) => {
-        stages.push(stage);
+        visitedStages.push(stage);
       });
 
       await pipeline.processGroup(group);
 
-      expect(stages).toContain('worktree_create');
-      expect(stages).toContain('ai_analysis');
-      expect(stages).toContain('ai_fix');
-      expect(stages).toContain('checks');
-      expect(stages).toContain('pr_create');
-      expect(stages).toContain('done');
+      expect(visitedStages).toContain('worktree_create');
+      expect(visitedStages).toContain('ai_analysis');
+      expect(visitedStages).toContain('ai_fix');
+      expect(visitedStages).toContain('checks');
+      expect(visitedStages).toContain('pr_create');
+      expect(visitedStages).toContain('done');
     });
 
     it('should handle worktree creation failure', async () => {
-      // Override mock for this test
-      const { WorktreeTool } = await import('../mcp-tools/worktree.js');
-      (WorktreeTool as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-        create: vi.fn().mockResolvedValue({
+      const stages = createMockStages({
+        worktreeExecute: vi.fn().mockResolvedValue({
           success: false,
           error: { code: 'WORKTREE_EXISTS', message: 'Worktree already exists' },
         }),
-        remove: vi.fn().mockResolvedValue({ success: true }),
-      }));
+      });
 
-      const pipeline = new ProcessingPipeline(pipelineConfig);
+      const pipeline = new ProcessingPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -249,22 +298,23 @@ describe('ProcessingPipeline', () => {
     });
 
     it('should handle check failures', async () => {
-      const { RunChecksTool } = await import('../mcp-tools/run-checks.js');
-      (RunChecksTool as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-        runChecks: vi.fn().mockResolvedValue({
-          success: true,
-          data: {
-            passed: false,
-            results: [
-              { check: 'lint', passed: false, status: 'failed', durationMs: 100, error: 'Lint errors' },
-            ],
-            attempt: 1,
-            totalDurationMs: 100,
-          },
-        }),
-      }));
+      const failedCheckResult: CheckResult = {
+        passed: false,
+        results: [
+          { check: 'lint', passed: false, status: 'failed', durationMs: 100, error: 'Lint errors' },
+        ],
+        attempt: 1,
+        totalDurationMs: 100,
+      };
 
-      const pipeline = new ProcessingPipeline(pipelineConfig);
+      const stages = createMockStages({
+        checkExecute: vi.fn().mockResolvedValue({
+          success: true,
+          data: failedCheckResult,
+        }),
+      });
+
+      const pipeline = new ProcessingPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -274,7 +324,8 @@ describe('ProcessingPipeline', () => {
 
     it('should skip actual changes in dry-run mode', async () => {
       const dryRunConfig = { ...pipelineConfig, dryRun: true };
-      const pipeline = createPipeline(dryRunConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(dryRunConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -284,7 +335,8 @@ describe('ProcessingPipeline', () => {
     });
 
     it('should include duration in result', async () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -295,7 +347,8 @@ describe('ProcessingPipeline', () => {
     });
 
     it('should include check results', async () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -307,16 +360,14 @@ describe('ProcessingPipeline', () => {
 
   describe('error handling', () => {
     it('should collect errors in context', async () => {
-      const { AIIntegration } = await import('../ai-integration.js');
-      (AIIntegration as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-        analyzeGroup: vi.fn().mockResolvedValue({
+      const stages = createMockStages({
+        analysisExecute: vi.fn().mockResolvedValue({
           success: false,
           error: { code: 'ANALYSIS_FAILED', message: 'Analysis failed' },
         }),
-        applyFix: vi.fn(),
-      }));
+      });
 
-      const pipeline = new ProcessingPipeline(pipelineConfig);
+      const pipeline = new ProcessingPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       const result = await pipeline.processGroup(group);
@@ -326,39 +377,31 @@ describe('ProcessingPipeline', () => {
     });
 
     it('should cleanup on failure', async () => {
-      const { WorktreeTool } = await import('../mcp-tools/worktree.js');
-      const removeMock = vi.fn().mockResolvedValue({ success: true });
+      const cleanupMock = vi.fn().mockResolvedValue(undefined);
 
-      (WorktreeTool as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-        create: vi.fn().mockResolvedValue({
-          success: true,
-          data: { path: '/test/worktree', branch: 'fix/test', status: 'ready', issueNumbers: [1], createdAt: new Date(), lastActivityAt: new Date() },
+      const stages = createMockStages({
+        worktreeCleanup: cleanupMock,
+        // Fail at the commit stage by making execInWorktree reject
+        commitExecute: vi.fn().mockResolvedValue({
+          success: false,
+          error: { code: 'COMMIT_FAILED', message: 'Commit failed' },
         }),
-        remove: removeMock,
-        execInWorktree: vi.fn().mockRejectedValue(new Error('Commit failed')),
-      }));
+      });
 
-      const { RunChecksTool } = await import('../mcp-tools/run-checks.js');
-      (RunChecksTool as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-        runChecks: vi.fn().mockResolvedValue({
-          success: true,
-          data: { passed: true, results: [], attempt: 1, totalDurationMs: 0 },
-        }),
-      }));
-
-      const pipeline = new ProcessingPipeline(pipelineConfig);
+      const pipeline = new ProcessingPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1]);
 
       await pipeline.processGroup(group);
 
-      // Should have called remove for cleanup
-      expect(removeMock).toHaveBeenCalled();
+      // Should have called cleanup for failure path
+      expect(cleanupMock).toHaveBeenCalled();
     });
   });
 
   describe('multi-issue groups', () => {
     it('should handle groups with multiple issues', async () => {
-      const pipeline = createPipeline(pipelineConfig);
+      const stages = createMockStages();
+      const pipeline = createPipeline(pipelineConfig, stages);
       const group = createMockGroup('g1', [1, 2, 3]);
 
       const result = await pipeline.processGroup(group);

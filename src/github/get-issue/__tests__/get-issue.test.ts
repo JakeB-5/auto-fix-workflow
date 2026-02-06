@@ -10,14 +10,16 @@ import type { GetIssueParams } from '../types.js';
 
 // Mock Octokit
 vi.mock('@octokit/rest', () => ({
-  Octokit: vi.fn(() => ({
-    rest: {
-      issues: {
-        get: vi.fn(),
-        listComments: vi.fn(),
+  Octokit: vi.fn(function () {
+    return {
+      rest: {
+        issues: {
+          get: vi.fn(),
+          listComments: vi.fn(),
+        },
       },
-    },
-  })),
+    };
+  }),
 }));
 
 describe('getIssue', () => {

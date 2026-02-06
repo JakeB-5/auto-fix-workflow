@@ -15,16 +15,18 @@ const mockSearch = vi.fn();
 // Mock Octokit
 vi.mock('@octokit/rest', () => {
   return {
-    Octokit: vi.fn().mockImplementation(() => ({
-      rest: {
-        issues: {
-          create: mockCreate,
+    Octokit: vi.fn().mockImplementation(function () {
+      return {
+        rest: {
+          issues: {
+            create: mockCreate,
+          },
+          search: {
+            issuesAndPullRequests: mockSearch,
+          },
         },
-        search: {
-          issuesAndPullRequests: mockSearch,
-        },
-      },
-    })),
+      };
+    }),
   };
 });
 

@@ -7,11 +7,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Octokit } from '@octokit/rest';
 
 vi.mock('@octokit/rest', () => ({
-  Octokit: vi.fn(() => ({
-    issues: {
-      listForRepo: vi.fn(),
-    },
-  })),
+  Octokit: vi.fn(function () {
+    return {
+      issues: {
+        listForRepo: vi.fn(),
+      },
+    };
+  }),
 }));
 
 describe('list-issues', () => {

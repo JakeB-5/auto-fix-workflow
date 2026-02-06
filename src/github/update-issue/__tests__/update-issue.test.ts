@@ -18,18 +18,20 @@ const mockSetLabels = vi.fn();
 // Mock Octokit
 vi.mock('@octokit/rest', () => {
   return {
-    Octokit: vi.fn().mockImplementation(() => ({
-      rest: {
-        issues: {
-          update: mockUpdate,
-          get: mockGet,
-          createComment: mockCreateComment,
-          addLabels: mockAddLabels,
-          removeLabel: mockRemoveLabel,
-          setLabels: mockSetLabels,
+    Octokit: vi.fn().mockImplementation(function () {
+      return {
+        rest: {
+          issues: {
+            update: mockUpdate,
+            get: mockGet,
+            createComment: mockCreateComment,
+            addLabels: mockAddLabels,
+            removeLabel: mockRemoveLabel,
+            setLabels: mockSetLabels,
+          },
         },
-      },
-    })),
+      };
+    }),
   };
 });
 
