@@ -35,7 +35,8 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test -- --run
+        run: npm test -- --run --reporter=verbose
+        timeout-minutes: 10
 
   build:
     runs-on: ubuntu-latest
