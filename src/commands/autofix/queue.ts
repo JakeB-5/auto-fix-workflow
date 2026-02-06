@@ -55,7 +55,7 @@ export class ProcessingQueue {
   private processFunction?: ProcessFunction;
   private isRunning = false;
   private isPaused = false;
-  private resumeResolve?: () => void;
+  private resumeResolve: (() => void) | undefined;
 
   constructor(maxConcurrency: number = 3, maxRetries: number = 3) {
     this.maxConcurrency = maxConcurrency;
