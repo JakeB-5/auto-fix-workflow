@@ -131,29 +131,41 @@ describe('ProcessingQueue', () => {
     });
 
     it('should respect concurrency limit', async () => {
-      const queue = new ProcessingQueue(2, 3);
-      let concurrent = 0;
-      let maxConcurrent = 0;
+      vi.useFakeTimers();
+      try {
+        const queue = new ProcessingQueue(2, 3);
+        let concurrent = 0;
+        let maxConcurrent = 0;
 
-      const groups = [
-        createMockGroup('g1', [1]),
-        createMockGroup('g2', [2]),
-        createMockGroup('g3', [3]),
-        createMockGroup('g4', [4]),
-      ];
+        const groups = [
+          createMockGroup('g1', [1]),
+          createMockGroup('g2', [2]),
+          createMockGroup('g3', [3]),
+          createMockGroup('g4', [4]),
+        ];
 
-      queue.enqueue(groups);
-      queue.setProcessor(async (group) => {
-        concurrent++;
-        maxConcurrent = Math.max(maxConcurrent, concurrent);
-        await new Promise(resolve => setTimeout(resolve, 50));
-        concurrent--;
-        return createMockResult(group, 'completed');
-      });
+        queue.enqueue(groups);
+        queue.setProcessor(async (group) => {
+          concurrent++;
+          maxConcurrent = Math.max(maxConcurrent, concurrent);
+          await new Promise(resolve => setTimeout(resolve, 50));
+          concurrent--;
+          return createMockResult(group, 'completed');
+        });
 
-      await queue.start();
+        const promise = queue.start();
 
-      expect(maxConcurrent).toBeLessThanOrEqual(2);
+        // Advance fake timers in steps to let queue process all items
+        for (let i = 0; i < 20; i++) {
+          await vi.advanceTimersByTimeAsync(50);
+        }
+
+        await promise;
+
+        expect(maxConcurrent).toBeLessThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should handle failures with retry', async () => {
@@ -257,56 +269,75 @@ describe('ProcessingQueue', () => {
 
   describe('pause/resume', () => {
     it('should pause processing', async () => {
-      const processedIds: string[] = [];
+      vi.useFakeTimers();
+      try {
+        const processedIds: string[] = [];
 
-      queue.enqueue([
-        createMockGroup('g1', [1]),
-        createMockGroup('g2', [2]),
-        createMockGroup('g3', [3]),
-      ]);
+        queue.enqueue([
+          createMockGroup('g1', [1]),
+          createMockGroup('g2', [2]),
+          createMockGroup('g3', [3]),
+        ]);
 
-      queue.setProcessor(async (group) => {
-        processedIds.push(group.id);
-        if (group.id === 'g1') {
-          queue.pause();
+        queue.setProcessor(async (group) => {
+          processedIds.push(group.id);
+          if (group.id === 'g1') {
+            queue.pause();
+          }
+          return createMockResult(group, 'completed');
+        });
+
+        // Start in background
+        const promise = queue.start();
+
+        // Advance fake timers to let initial processing happen
+        await vi.advanceTimersByTimeAsync(200);
+        queue.resume();
+
+        // Let queue finish remaining items
+        for (let i = 0; i < 10; i++) {
+          await vi.advanceTimersByTimeAsync(100);
         }
-        return createMockResult(group, 'completed');
-      });
 
-      // Start in background
-      const promise = queue.start();
+        await promise;
 
-      // Wait a bit and resume
-      await new Promise(resolve => setTimeout(resolve, 200));
-      queue.resume();
-
-      await promise;
-
-      expect(processedIds.length).toBe(3);
+        expect(processedIds.length).toBe(3);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
   describe('stop', () => {
     it('should stop queue gracefully', async () => {
-      const queue = new ProcessingQueue(1, 3);
+      vi.useFakeTimers();
+      try {
+        const queue = new ProcessingQueue(1, 3);
 
-      queue.enqueue([
-        createMockGroup('g1', [1]),
-        createMockGroup('g2', [2]),
-      ]);
+        queue.enqueue([
+          createMockGroup('g1', [1]),
+          createMockGroup('g2', [2]),
+        ]);
 
-      queue.setProcessor(async (group) => {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        return createMockResult(group, 'completed');
-      });
+        queue.setProcessor(async (group) => {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return createMockResult(group, 'completed');
+        });
 
-      // Start and stop
-      const promise = queue.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      await queue.stop();
+        // Start and stop
+        const promise = queue.start();
+        await vi.advanceTimersByTimeAsync(50);
+        const stopPromise = queue.stop();
 
-      const results = await promise;
-      expect(results.length).toBeLessThanOrEqual(2);
+        // Advance timers to let active items complete
+        await vi.advanceTimersByTimeAsync(100);
+        await stopPromise;
+
+        const results = await promise;
+        expect(results.length).toBeLessThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should force stop immediately', () => {

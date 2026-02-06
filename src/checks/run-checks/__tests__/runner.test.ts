@@ -3,13 +3,18 @@
  * @description Tests for main check runner
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { runChecks } from '../runner.js';
 import { isSuccess, isFailure } from '../../../common/types/index.js';
 import type { RunChecksParams } from '../../../common/types/index.js';
+
+// Mock retry to eliminate exponential backoff delays that hang in CI forks pool
+vi.mock('../retry.js', () => ({
+  withRetry: vi.fn(async (fn: () => Promise<any>) => fn()),
+}));
 
 describe('runChecks', () => {
   let tempDir: string;

@@ -4,7 +4,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { invokeClaudeCLI, safeInvokeClaude } from '../client.js';
 import type { ClaudeOptions } from '../types.js';
 import { EventEmitter } from 'events';
 import { Writable } from 'stream';
@@ -56,12 +55,21 @@ function createMockProcess() {
 describe('client', () => {
   let mockSpawn: ReturnType<typeof vi.fn>;
   let mockProcess: ReturnType<typeof createMockProcess>;
+  let invokeClaudeCLI: (...args: any[]) => any;
+  let safeInvokeClaude: (...args: any[]) => any;
 
   beforeEach(async () => {
+    // Reset module cache to ensure mocks are applied fresh (critical for isolate: false)
+    vi.resetModules();
     const { spawn } = await import('child_process');
     mockSpawn = spawn as ReturnType<typeof vi.fn>;
     mockProcess = createMockProcess();
     mockSpawn.mockReturnValue(mockProcess);
+
+    // Dynamically import client AFTER mocks are set up
+    const clientModule = await import('../client.js');
+    invokeClaudeCLI = clientModule.invokeClaudeCLI;
+    safeInvokeClaude = clientModule.safeInvokeClaude;
   });
 
   afterEach(() => {
