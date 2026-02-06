@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Needs-info GitHub issues for low-confidence triage tasks**: When triage analysis confidence is below threshold (default 0.5), a GitHub issue is now created with `needs-info` label instead of silently skipping
+  - Structured comment on the issue listing confidence breakdown and action items checklist
+  - Asana task receives a comment with the GitHub issue link
+  - Configurable via `confidenceThreshold` and `needsInfoLabels` in triage config
+  - New `generateNeedsInfoComment()` in comment generator with breakdown table
+  - New `createIssueForNeedsInfo()` method in GitHubCreateTool
+  - `TriageResult` now tracks `needsInfo` count separately
+  - ProgressReporter displays needs-info count in progress output
+
 ## [0.4.24] - 2026-02-06
 
 ### Documentation

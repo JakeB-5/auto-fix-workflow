@@ -8,13 +8,7 @@ import type { Result } from '../../../common/types/result.js';
 import { ok, err, isFailure } from '../../../common/types/result.js';
 import type { ClaudeOptions, ClaudeResult, AIError } from './types.js';
 import { parseStreamJsonChunk, parseUsageInfo } from './parser.js';
-
-/**
- * Sleep utility for retry backoff
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { sleep } from './timer-utils.js';
 
 /**
  * Invoke Claude CLI as subprocess

@@ -29,43 +29,50 @@ vi.mock('../parser.js', () => ({
   }),
 }));
 
+// Mock sleep to resolve immediately (avoids fake timer issues with retry logic)
+vi.mock('../timer-utils.js', () => ({
+  sleep: vi.fn(() => Promise.resolve()),
+}));
+
+/** Helper: create a mock child process */
+function createMockProcess() {
+  return Object.assign(new EventEmitter(), {
+    stdin: new Writable({
+      write(chunk: any, encoding: any, callback: any) {
+        if (typeof callback === 'function') callback();
+        return true;
+      },
+    }),
+    stdout: new EventEmitter(),
+    stderr: new EventEmitter(),
+    kill: vi.fn(),
+  });
+}
+
 describe('client', () => {
   let mockSpawn: ReturnType<typeof vi.fn>;
-  let mockProcess: EventEmitter & {
-    stdin: Writable | null;
-    stdout: EventEmitter | null;
-    stderr: EventEmitter | null;
-    kill: ReturnType<typeof vi.fn>;
-  };
+  let mockProcess: ReturnType<typeof createMockProcess>;
 
   beforeEach(async () => {
-    vi.useFakeTimers();
-
     const { spawn } = await import('child_process');
     mockSpawn = spawn as ReturnType<typeof vi.fn>;
-
-    // Create mock process with proper types
-    mockProcess = Object.assign(new EventEmitter(), {
-      stdin: new Writable({
-        write(chunk: any, encoding: any, callback: any) {
-          if (typeof callback === 'function') callback();
-          return true;
-        },
-      }),
-      stdout: new EventEmitter(),
-      stderr: new EventEmitter(),
-      kill: vi.fn(),
-    });
-
+    mockProcess = createMockProcess();
     mockSpawn.mockReturnValue(mockProcess);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.useRealTimers();
   });
 
   describe('invokeClaudeCLI', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should spawn claude with correct arguments for streaming', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test prompt',
@@ -470,6 +477,9 @@ describe('client', () => {
   });
 
   describe('safeInvokeClaude', () => {
+    // sleep is mocked via vi.mock('../timer-utils.js') to resolve immediately,
+    // so no fake timers are needed for retry tests.
+
     it('should return result on first success', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
@@ -495,22 +505,11 @@ describe('client', () => {
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           attempt++;
           if (attempt === 1) {
-            // Must set exit code to non-zero to indicate failure
             proc.stderr?.emit(
               'data',
               Buffer.from('Rate limit exceeded')
@@ -525,12 +524,7 @@ describe('client', () => {
         return proc;
       });
 
-      const resultPromise = safeInvokeClaude(options, 3);
-
-      // Advance timers for retry backoff
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(true);
       expect(mockSpawn.mock.calls.length).toBeGreaterThan(1);
@@ -543,17 +537,7 @@ describe('client', () => {
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           attempt++;
@@ -572,10 +556,7 @@ describe('client', () => {
         return proc;
       });
 
-      const resultPromise = safeInvokeClaude(options, 3);
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(true);
     });
@@ -587,17 +568,7 @@ describe('client', () => {
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           attempt++;
@@ -613,22 +584,13 @@ describe('client', () => {
         return proc;
       });
 
-      const sleepSpy = vi.fn((ms: number) => Promise.resolve());
-      vi.doMock('../client.js', async () => {
-        const actual = await vi.importActual<typeof import('../client.js')>('../client.js');
-        return {
-          ...actual,
-          sleep: sleepSpy,
-        };
-      });
+      await safeInvokeClaude(options, 3);
 
-      const resultPromise = safeInvokeClaude(options, 3);
-      await vi.runAllTimersAsync();
-
-      await resultPromise;
-
-      // Just verify backoff happened - actual implementation uses sleep internally
-      expect(mockSpawn.mock.calls.length).toBeGreaterThan(1);
+      // Verify retries happened with exponential backoff
+      const { sleep } = await import('../timer-utils.js');
+      expect(sleep).toHaveBeenCalledWith(1000); // 2^0 * 1000
+      expect(sleep).toHaveBeenCalledWith(2000); // 2^1 * 1000
+      expect(mockSpawn.mock.calls.length).toBe(3);
     });
 
     it('should not retry on CLI_NOT_FOUND error', async () => {
@@ -683,17 +645,7 @@ describe('client', () => {
       };
 
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           proc.emit('error', new Error('Persistent error'));
@@ -702,10 +654,7 @@ describe('client', () => {
         return proc;
       });
 
-      const resultPromise = safeInvokeClaude(options, 3);
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -720,17 +669,7 @@ describe('client', () => {
       };
 
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           proc.stderr?.emit('data', Buffer.from('Rate limit'));
@@ -740,10 +679,7 @@ describe('client', () => {
         return proc;
       });
 
-      const resultPromise = safeInvokeClaude(options);
-      await vi.runAllTimersAsync();
-
-      await resultPromise;
+      await safeInvokeClaude(options);
 
       expect(mockSpawn).toHaveBeenCalledTimes(3);
     });
@@ -755,17 +691,7 @@ describe('client', () => {
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
-        const proc = Object.assign(new EventEmitter(), {
-          stdin: new Writable({
-            write(chunk: any, encoding: any, callback: any) {
-              if (typeof callback === 'function') callback();
-              return true;
-            },
-          }),
-          stdout: new EventEmitter(),
-          stderr: new EventEmitter(),
-          kill: vi.fn(),
-        });
+        const proc = createMockProcess();
 
         process.nextTick(() => {
           attempt++;
@@ -784,10 +710,7 @@ describe('client', () => {
         return proc;
       });
 
-      const resultPromise = safeInvokeClaude(options, 3);
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(true);
     });
