@@ -148,7 +148,8 @@ describe('InterruptHandlerImpl', () => {
     it('should wait for cleanup to finish', async () => {
       let finished = false;
       handler.onCleanup(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        // Use microtask instead of setTimeout to avoid vmThreads timer issues
+        await Promise.resolve();
         finished = true;
       });
 
@@ -251,14 +252,14 @@ describe('interruptibleDelay', () => {
   });
 
   it('should reject if interrupted during delay', async () => {
-    // Use real timers for this test since fake timers cause unhandled rejection
-    // with setInterval-based polling
-    vi.useRealTimers();
-
+    // Keep fake timers (set in beforeEach) - real timers don't fire reliably in vmThreads
     const promise = interruptibleDelay(handler, 500);
+    // Attach catch handler early to prevent unhandled rejection during timer advancement
+    promise.catch(() => {});
 
-    // Interrupt after a short real delay
-    setTimeout(() => handler.requestInterrupt(), 50);
+    // Interrupt synchronously, then advance timers so setInterval polling detects it
+    handler.requestInterrupt();
+    await vi.advanceTimersByTimeAsync(200);
 
     await expect(promise).rejects.toThrow('Operation interrupted');
   });

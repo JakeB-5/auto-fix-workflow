@@ -289,14 +289,27 @@ describe('AIIntegration', () => {
     });
 
     it('should handle timeout', async () => {
-      vi.mocked(spawn).mockReturnValue(mockTimeoutCLI());
+      // Create a custom timeout mock that emits close synchronously on kill
+      // to avoid relying on setImmediate which doesn't fire reliably in vmThreads
+      const proc = createMockChildProcess();
+      proc.kill = vi.fn(() => {
+        proc.emit('close', null);
+        return true;
+      });
+      vi.mocked(spawn).mockReturnValue(proc);
+
+      vi.useFakeTimers();
 
       const options: ClaudeOptions = {
         prompt: 'Test prompt',
         timeout: 100, // Short timeout for test
       };
 
-      const result = await invokeClaudeCLI(options);
+      const resultPromise = invokeClaudeCLI(options);
+      await vi.advanceTimersByTimeAsync(200);
+      vi.useRealTimers();
+
+      const result = await resultPromise;
 
       expect(result.success).toBe(false);
       expect(result).toHaveProperty('error');

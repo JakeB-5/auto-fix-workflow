@@ -134,46 +134,61 @@ describe('Error Handling Integration', () => {
     });
 
     it('should retry on failure', async () => {
+      vi.useFakeTimers();
       const fn = vi.fn()
         .mockRejectedValueOnce(new Error('ECONNREFUSED')) // Network error - retryable
         .mockResolvedValue('success');
 
-      const result = await withRetry(fn, {
+      const resultPromise = withRetry(fn, {
         maxAttempts: 3,
         initialDelayMs: 10,
         maxDelayMs: 50,
       });
+
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+      vi.useRealTimers();
 
       expect(result.success).toBe(true);
       expect(fn).toHaveBeenCalledTimes(2);
     });
 
     it('should fail after max attempts', async () => {
+      vi.useFakeTimers();
       const fn = vi.fn().mockRejectedValue(new Error('ETIMEDOUT')); // Network error - retryable
 
-      const result = await withRetry(fn, {
+      const resultPromise = withRetry(fn, {
         maxAttempts: 3,
         initialDelayMs: 10,
         maxDelayMs: 50,
       });
+
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+      vi.useRealTimers();
 
       expect(result.success).toBe(false);
       expect(fn).toHaveBeenCalledTimes(3);
     });
 
     it('should call onRetry callback', async () => {
+      vi.useFakeTimers();
       const fn = vi.fn()
         .mockRejectedValueOnce(new Error('ENOTFOUND')) // Network error - retryable
         .mockResolvedValue('success');
 
       const onRetry = vi.fn();
 
-      await withRetry(fn, {
+      const resultPromise = withRetry(fn, {
         maxAttempts: 3,
         initialDelayMs: 10,
         maxDelayMs: 50,
         onRetry,
       });
+
+      await vi.runAllTimersAsync();
+      await resultPromise;
+      vi.useRealTimers();
 
       expect(onRetry).toHaveBeenCalledTimes(1);
       expect(onRetry).toHaveBeenCalledWith(

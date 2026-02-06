@@ -291,7 +291,12 @@ describe('Autofix Integration', () => {
         return pipeline.processGroup(group);
       });
 
-      const results = await queue.start();
+      vi.useFakeTimers();
+      const resultsPromise = queue.start();
+      await vi.runAllTimersAsync();
+      vi.useRealTimers();
+
+      const results = await resultsPromise;
 
       expect(results.length).toBe(2);
       expect(results.every(r => r.status === 'completed')).toBe(true);
