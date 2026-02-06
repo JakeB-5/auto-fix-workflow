@@ -287,12 +287,13 @@ describe('E2E: Triage Command', () => {
     });
 
     it('should handle retry with exponential backoff', async () => {
+      vi.useFakeTimers();
       const { withRetry } = await import('../error-handler.js');
 
       let attempts = 0;
       const delays: number[] = [];
 
-      const result = await withRetry(
+      const resultPromise = withRetry(
         async () => {
           attempts++;
           if (attempts < 3) {
@@ -310,6 +311,10 @@ describe('E2E: Triage Command', () => {
           },
         }
       );
+
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+      vi.useRealTimers();
 
       expect(result.success).toBe(true);
       expect(attempts).toBe(3);
