@@ -36,13 +36,11 @@ npx auto-fix-workflow init
 - `autofixing` 브랜치 생성 및 origin에 푸시
 
 옵션:
-- `--non-interactive`: GITHUB_TOKEN, ASANA_TOKEN 환경변수에서 토큰 읽기
-- `--force`: 기존 설정 파일 덮어쓰기
-- `--skip-validation`: 토큰 검증 건너뛰기
+- `-n, --non-interactive`: `GITHUB_TOKEN`, `ASANA_TOKEN` 환경변수에서 토큰 읽기
+- `-f, --force`: 기존 설정 파일 덮어쓰기
+- `-s, --skip-validation`: 토큰 검증 건너뛰기
 
 자세한 설정 방법은 [초기 설정 가이드](./docs/SETUP.ko.md)를 참조하세요.
-
-## 빠른 시작
 
 ### MCP 서버로 사용
 
@@ -103,11 +101,12 @@ ai:
 
 | 도구 | 설명 |
 |------|------|
-| `github_get_issue` | 번호로 이슈 상세 조회 |
-| `github_list_issues` | 저장소 이슈 목록 조회 및 필터링 |
+| `get_github_issue` | 번호로 이슈 상세 조회 |
+| `list_issues` | 저장소 이슈 목록 조회 및 필터링 |
 | `github_create_issue` | 라벨과 함께 새 이슈 생성 |
-| `github_update_issue` | 이슈 상태 및 내용 업데이트 |
+| `update_github_issue` | 이슈 상태 및 내용 업데이트 |
 | `github_create_pr` | Pull Request 생성 |
+| `add_issue_progress_comment` | 이슈에 진행 상황 코멘트 추가 |
 
 ### Asana 도구
 
@@ -118,27 +117,24 @@ ai:
 | `asana_update_task` | 태스크 상태 업데이트 |
 | `asana_analyze_task` | 자동 수정 적합성 분석 |
 
-### Git 도구
+### Git 도구 (내부용)
+
+다음 도구는 autofix 파이프라인 내부에서 사용되며 MCP를 통해 직접 노출되지 않습니다:
 
 | 도구 | 설명 |
 |------|------|
-| `git_create_worktree` | 격리된 worktree 생성 |
-| `git_remove_worktree` | worktree 제거 및 정리 |
-| `git_list_worktrees` | 활성 worktree 목록 조회 |
+| `git_worktree` | 통합 Worktree 관리 (action 파라미터로 create/remove/list 구분) |
 
-### 검사 도구
+### 워크플로우 도구 (내부용)
 
-| 도구 | 설명 |
-|------|------|
-| `run_checks` | typecheck, lint, test 실행 |
-
-### 워크플로우 도구
+다음 도구는 autofix 파이프라인 내부에서 사용됩니다:
 
 | 도구 | 설명 |
 |------|------|
-| `group_issues` | 컴포넌트별 관련 이슈 그룹화 |
-| `triage` | 이슈 우선순위 지정 및 분류 |
-| `autofix` | 전체 자동 수정 워크플로우 실행 |
+| `group_issues` | 컴포넌트/파일/라벨별 관련 이슈 그룹화 |
+| `run_checks` | Worktree에서 typecheck, lint, test 실행 |
+
+> **참고:** `triage`와 `autofix`는 MCP 도구가 아닌 CLI 커맨드입니다. 사용법은 [명령어](#명령어) 섹션을 참조하세요.
 
 ## 명령어
 
@@ -151,46 +147,132 @@ npx auto-fix-workflow init
 ```
 
 옵션:
-- `--non-interactive`: 환경변수에서 토큰 읽기
-- `--force`: 기존 파일 덮어쓰기
-- `--skip-validation`: 토큰 검증 건너뛰기
+- `-n, --non-interactive`: `GITHUB_TOKEN`, `ASANA_TOKEN` 환경변수에서 토큰 읽기
+- `-f, --force`: 기존 설정 파일 덮어쓰기
+- `-s, --skip-validation`: 토큰 검증 건너뛰기
 
 ### Triage 명령어
 
-처리할 이슈 분석 및 우선순위 지정:
+Asana 태스크 분석 및 GitHub 이슈 생성:
 
 ```bash
-npx auto-fix-workflow triage --label auto-fix --limit 10
+# 인터랙티브 모드 (UI에서 태스크 선택)
+npx auto-fix-workflow triage
+
+# 배치 모드 (모든 태스크 자동 처리)
+npx auto-fix-workflow triage --mode batch
+
+# 단일 태스크 직접 지정
+npx auto-fix-workflow triage 1234567890
+
+# 프로젝트 필터 + 드라이런
+npx auto-fix-workflow triage --dry-run --project 1234567890
 ```
 
 옵션:
-- `--label`: 라벨로 필터링
-- `--state`: 상태로 필터링 (open/closed)
-- `--limit`: 처리할 최대 이슈 수
-- `--dry-run`: 변경 없이 미리보기
+| 플래그 | 단축 | 타입 | 기본값 | 설명 |
+|--------|------|------|--------|------|
+| `--mode <mode>` | `-m` | enum | `interactive` | 모드: `interactive`, `batch`, `single` |
+| `--dry-run` | `-d` | boolean | `false` | 변경 없이 미리보기 |
+| `--project <gid>` | `-p` | string | - | Asana 프로젝트 GID |
+| `--section <gid>` | `-s` | string | - | Asana 섹션 GID |
+| `--priority <level>` | `-P` | enum | - | 필터: `critical`, `high`, `medium`, `low` |
+| `--limit <n>` | `-l` | number | - | 처리할 최대 태스크 수 |
+| `--yes` | `-y` | boolean | `false` | 확인 프롬프트 건너뛰기 |
+| `--verbose` | `-v` | boolean | `false` | 상세 출력 활성화 |
+
+위치 인자: 단일 태스크 처리를 위한 태스크 GID (숫자).
 
 ### Autofix 명령어
 
 자동 수정 워크플로우 실행:
 
 ```bash
-npx auto-fix-workflow autofix --issues 1,2,3
+# 모든 auto-fix 라벨 이슈 처리
+npx auto-fix-workflow autofix --all
+
+# 특정 이슈만 처리
+npx auto-fix-workflow autofix --issues 123,456
+
+# 드라이런 (미리보기)
+npx auto-fix-workflow autofix --all --dry-run
+
+# 그룹핑 전략 및 병렬 처리 수 조절
+npx auto-fix-workflow autofix --all --group-by file --max-parallel 5
 ```
 
 옵션:
-- `--issues`: 쉼표로 구분된 이슈 번호
-- `--group-by`: 그룹화 전략 (component/file/none)
-- `--fail-fast`: 첫 실패 시 중단
-- `--dry-run`: 작업 미리보기
+| 플래그 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `--all` | boolean | `false` | 모든 auto-fix 라벨 이슈 처리 |
+| `--issues <nums>` | string | - | 쉼표로 구분된 이슈 번호 |
+| `--group-by <strategy>` | enum | `component` | 그룹핑: `component`, `file`, `label`, `type`, `priority` |
+| `--max-parallel <n>` | number | `3` | 최대 병렬 워크트리 수 (1-10) |
+| `--dry-run` | boolean | `false` | 변경 없이 미리보기 |
+| `--max-retries <n>` | number | `3` | 그룹당 최대 재시도 횟수 (1-10) |
+| `--labels <labels>` | string | - | 라벨로 이슈 필터링 (쉼표 구분) |
+| `--exclude-labels <labels>` | string | - | 해당 라벨 이슈 제외 |
+| `--base-branch <name>` | string | `autofixing` | PR 타겟 브랜치 |
+| `--verbose` | boolean | `false` | 상세 출력 활성화 |
+| `--config <path>` | string | - | 설정 파일 경로 |
+
+> **참고:** `--all`과 `--issues`는 동시 사용 불가합니다.
 
 ## 환경 변수
 
-| 변수 | 설명 | 필수 |
-|------|------|------|
-| `GITHUB_TOKEN` | GitHub 개인 액세스 토큰 | 예 |
-| `ASANA_TOKEN` | Asana 개인 액세스 토큰 | Asana 기능 사용 시 |
-| `AUTO_FIX_CONFIG` | 커스텀 설정 파일 경로 | 아니오 |
-| `LOG_LEVEL` | 로깅 레벨 (debug/info/warn/error) | 아니오 |
+### 필수
+
+| 변수 | 설명 |
+|------|------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token |
+
+### 선택 - GitHub
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `GITHUB_OWNER` | - | 저장소 소유자 (`.auto-fix.yaml`에서도 설정 가능) |
+| `GITHUB_REPO` | - | 저장소 이름 |
+| `GITHUB_API_URL` | - | 커스텀 GitHub API URL (Enterprise용) |
+| `GITHUB_DEFAULT_BRANCH` | `main` | 기본 브랜치명 |
+| `AUTOFIX_LABEL` | `auto-fix` | 자동 수정 대상 라벨 |
+| `AUTOFIX_SKIP_LABEL` | `auto-fix-skip` | 제외할 이슈 라벨 |
+
+### 선택 - Asana
+
+| 변수 | 설명 |
+|------|------|
+| `ASANA_TOKEN` | Asana Personal Access Token (triage 필수) |
+| `ASANA_DEFAULT_PROJECT_GID` | 기본 Asana 프로젝트 GID |
+| `ASANA_TRIAGE_SECTION` | 트리아지 스캔 대상 섹션명 |
+| `ASANA_PROCESSED_SECTION` | 처리 완료 섹션명 |
+| `ASANA_SYNCED_TAG` | 동기화 완료 태그명 |
+| `TRIAGE_MAX_BATCH_SIZE` | 트리아지 최대 배치 크기 |
+
+### 선택 - Worktree
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `WORKTREE_BASE_DIR` | `.worktrees` | Worktree 기본 디렉토리 |
+| `WORKTREE_MAX_CONCURRENT` | `3` | 최대 동시 Worktree 수 |
+| `WORKTREE_PREFIX` | `autofix-` | 브랜치명 접두사 |
+
+### 선택 - 검사 커맨드
+
+| 변수 | 설명 |
+|------|------|
+| `TEST_COMMAND` | 커스텀 테스트 커맨드 (package.json에서 자동 감지) |
+| `TYPECHECK_COMMAND` | 커스텀 타입체크 커맨드 |
+| `LINT_COMMAND` | 커스텀 린트 커맨드 |
+
+### 선택 - 로깅
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `AUTO_FIX_CONFIG` | `.auto-fix.yaml` | 커스텀 설정 파일 경로 |
+| `LOG_LEVEL` | `info` | 로그 레벨: `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
+| `LOG_PRETTY` | `true` (개발) | 로그 포맷팅 활성화 |
+| `LOG_REDACT` | `true` | 민감 데이터 마스킹 |
+| `NO_COLOR` | - | 색상 출력 비활성화 |
 
 ## API 토큰 권한
 
@@ -419,6 +501,34 @@ npx sdd-tool list
 ```
 
 스펙 파일은 `.sdd/specs/` 디렉토리에 있습니다.
+
+## Autofix 파이프라인
+
+autofix 명령어는 9단계 파이프라인으로 이슈를 처리합니다:
+
+```
+단계 1: Worktree 생성     → 격리된 Git Worktree 생성
+단계 2: AI 분석            → Claude CLI로 이슈 분석
+단계 3: AI 수정            → Claude CLI로 코드 수정 생성
+단계 4: 의존성 설치         → npm install 실행
+단계 5: 품질 검사           → typecheck → lint → test 실행
+단계 6: 커밋 및 푸시        → 변경사항 커밋 후 브랜치 푸시
+단계 7: PR 생성            → autofixing 브랜치로 Pull Request 생성
+단계 8: 이슈 업데이트       → 이슈에 PR 링크 코멘트 추가
+단계 9: 정리               → Worktree 제거
+```
+
+이슈는 전략(component, file, label 등)에 따라 그룹화되고, Git Worktree를 사용하여 병렬 처리됩니다. 검사 실패 시 AI가 수정을 조정하여 자동 재시도합니다.
+
+### 브랜치 전략
+
+```
+main ◀─────────────── (수동 머지)
+  └── autofixing ◀─── (PR 타겟)
+        ├── fix/issue-123
+        ├── fix/issue-124-125 (그룹)
+        └── fix/issue-126
+```
 
 ## 아키텍처
 

@@ -32,13 +32,39 @@ init 실행 후 수동으로 설정해야 할 사항:
 GITHUB_TOKEN=xxx ASANA_TOKEN=yyy npx auto-fix-workflow init --non-interactive
 ```
 
+## 사전 요구사항
+
+auto-fix-workflow 사용 전 다음이 설치되어 있어야 합니다:
+
+### Claude CLI (autofix 필수)
+
+autofix 명령어는 AI 기반 코드 분석 및 수정 생성에 Claude CLI를 사용합니다.
+
+```bash
+# Claude CLI 설치
+npm install -g @anthropic-ai/claude-cli
+
+# 인증
+claude auth login
+```
+
+### Node.js
+
+Node.js 20 이상이 필요합니다.
+
+```bash
+node --version  # 20.0.0 이상이어야 함
+```
+
 ## 목차
 
 - [Init 명령어로 빠른 설정](#init-명령어로-빠른-설정)
+- [사전 요구사항](#사전-요구사항)
 - [GitHub 설정](#github-설정)
 - [Asana 설정](#asana-설정)
 - [Sentry 설정](#sentry-설정)
 - [설정 파일](#설정-파일)
+- [환경 변수](#환경-변수)
 - [설정 체크리스트](#설정-체크리스트)
 
 ---
@@ -422,6 +448,66 @@ ai:
 - Claude CLI가 설치되어 있고 인증되어 있어야 합니다
 - 설치: `npm install -g @anthropic-ai/claude-cli`
 - 인증: `claude auth login`
+
+---
+
+## 환경 변수
+
+환경 변수는 `.auto-fix.yaml`의 값을 오버라이드합니다. 우선순위: CLI 플래그 > 환경 변수 > 설정 파일 > 기본값.
+
+### 인증
+
+| 변수 | 설명 | 필수 |
+|------|------|------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token | 예 |
+| `ASANA_TOKEN` | Asana Personal Access Token | triage 커맨드 사용 시 |
+
+### GitHub
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `GITHUB_OWNER` | - | 저장소 소유자 |
+| `GITHUB_REPO` | - | 저장소 이름 |
+| `GITHUB_API_URL` | - | 커스텀 API URL (GitHub Enterprise용) |
+| `GITHUB_DEFAULT_BRANCH` | `main` | 기본 브랜치명 |
+| `AUTOFIX_LABEL` | `auto-fix` | 자동 수정 대상 이슈 라벨 |
+| `AUTOFIX_SKIP_LABEL` | `auto-fix-skip` | 자동 수정 제외 라벨 |
+
+### Asana
+
+| 변수 | 설명 |
+|------|------|
+| `ASANA_DEFAULT_PROJECT_GID` | 기본 Asana 프로젝트 GID |
+| `ASANA_TRIAGE_SECTION` | 트리아지 스캔 대상 섹션명 |
+| `ASANA_PROCESSED_SECTION` | 처리 완료 섹션명 |
+| `ASANA_SYNCED_TAG` | 동기화 완료 태그명 |
+| `TRIAGE_MAX_BATCH_SIZE` | 트리아지 최대 배치 크기 |
+
+### Worktree
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `WORKTREE_BASE_DIR` | `.worktrees` | Worktree 기본 디렉토리 |
+| `WORKTREE_MAX_CONCURRENT` | `3` | 최대 동시 Worktree 수 |
+| `WORKTREE_PREFIX` | `autofix-` | 수정 브랜치명 접두사 |
+
+### 품질 검사
+
+| 변수 | 설명 |
+|------|------|
+| `TEST_COMMAND` | 커스텀 테스트 커맨드 (미설정 시 package.json에서 자동 감지) |
+| `TYPECHECK_COMMAND` | 커스텀 타입체크 커맨드 (미설정 시 자동 감지) |
+| `LINT_COMMAND` | 커스텀 린트 커맨드 (미설정 시 자동 감지) |
+
+### 로깅
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `AUTO_FIX_CONFIG` | `.auto-fix.yaml` | 커스텀 설정 파일 경로 |
+| `LOG_LEVEL` | `info` | 로그 레벨: `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
+| `LOG_PRETTY` | `true` (개발) | 로그 포맷팅 활성화 |
+| `LOG_REDACT` | `true` | 민감 데이터 마스킹 |
+| `NO_COLOR` | - | 색상 출력 비활성화 |
 
 ---
 

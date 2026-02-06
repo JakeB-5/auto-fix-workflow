@@ -32,13 +32,39 @@ For non-interactive setup (CI/CD):
 GITHUB_TOKEN=xxx ASANA_TOKEN=yyy npx auto-fix-workflow init --non-interactive
 ```
 
+## Prerequisites
+
+Before using auto-fix-workflow, ensure the following are installed:
+
+### Claude CLI (Required for autofix)
+
+The autofix command uses Claude CLI for AI-powered code analysis and fix generation.
+
+```bash
+# Install Claude CLI
+npm install -g @anthropic-ai/claude-cli
+
+# Authenticate
+claude auth login
+```
+
+### Node.js
+
+Node.js 20 or higher is required.
+
+```bash
+node --version  # Must be >= 20.0.0
+```
+
 ## Table of Contents
 
 - [Quick Setup with Init Command](#quick-setup-with-init-command)
+- [Prerequisites](#prerequisites)
 - [GitHub Setup](#github-setup)
 - [Asana Setup](#asana-setup)
 - [Sentry Setup](#sentry-setup)
 - [Configuration File](#configuration-file)
+- [Environment Variables](#environment-variables)
 - [Setup Checklist](#setup-checklist)
 
 ---
@@ -422,6 +448,66 @@ ai:
 - Claude CLI must be installed and authenticated
 - Install: `npm install -g @anthropic-ai/claude-cli`
 - Authenticate: `claude auth login`
+
+---
+
+## Environment Variables
+
+Environment variables override values from `.auto-fix.yaml`. Priority: CLI flags > Environment variables > Config file > Defaults.
+
+### Authentication
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token | Yes |
+| `ASANA_TOKEN` | Asana Personal Access Token | For triage command |
+
+### GitHub
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GITHUB_OWNER` | - | Repository owner |
+| `GITHUB_REPO` | - | Repository name |
+| `GITHUB_API_URL` | - | Custom API URL (for GitHub Enterprise) |
+| `GITHUB_DEFAULT_BRANCH` | `main` | Default branch name |
+| `AUTOFIX_LABEL` | `auto-fix` | Label for auto-fix target issues |
+| `AUTOFIX_SKIP_LABEL` | `auto-fix-skip` | Label to exclude from auto-fix |
+
+### Asana
+
+| Variable | Description |
+|----------|-------------|
+| `ASANA_DEFAULT_PROJECT_GID` | Default Asana project GID |
+| `ASANA_TRIAGE_SECTION` | Section name to scan for triage tasks |
+| `ASANA_PROCESSED_SECTION` | Section name for processed tasks |
+| `ASANA_SYNCED_TAG` | Tag name for synced tasks |
+| `TRIAGE_MAX_BATCH_SIZE` | Maximum batch size for triage |
+
+### Worktree
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WORKTREE_BASE_DIR` | `.worktrees` | Base directory for worktrees |
+| `WORKTREE_MAX_CONCURRENT` | `3` | Maximum concurrent worktrees |
+| `WORKTREE_PREFIX` | `autofix-` | Branch name prefix for fix branches |
+
+### Quality Checks
+
+| Variable | Description |
+|----------|-------------|
+| `TEST_COMMAND` | Custom test command (auto-detected from package.json if not set) |
+| `TYPECHECK_COMMAND` | Custom typecheck command (auto-detected if not set) |
+| `LINT_COMMAND` | Custom lint command (auto-detected if not set) |
+
+### Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTO_FIX_CONFIG` | `.auto-fix.yaml` | Custom config file path |
+| `LOG_LEVEL` | `info` | Log level: `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
+| `LOG_PRETTY` | `true` (dev) | Enable pretty log formatting |
+| `LOG_REDACT` | `true` | Redact sensitive data in logs |
+| `NO_COLOR` | - | Disable colored output |
 
 ---
 

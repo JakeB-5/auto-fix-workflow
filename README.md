@@ -36,13 +36,11 @@ This will:
 - Create `autofixing` branch and push to origin
 
 Options:
-- `--non-interactive`: Read tokens from GITHUB_TOKEN and ASANA_TOKEN environment variables
-- `--force`: Overwrite existing configuration files
-- `--skip-validation`: Skip token validation
+- `-n, --non-interactive`: Read tokens from `GITHUB_TOKEN` and `ASANA_TOKEN` environment variables
+- `-f, --force`: Overwrite existing configuration files
+- `-s, --skip-validation`: Skip token validation steps
 
 For detailed setup instructions, see [Setup Guide](./docs/SETUP.md).
-
-## Quick Start
 
 ### As MCP Server
 
@@ -103,11 +101,12 @@ ai:
 
 | Tool | Description |
 |------|-------------|
-| `github_get_issue` | Fetch issue details by number |
-| `github_list_issues` | List and filter repository issues |
+| `get_github_issue` | Fetch issue details by number |
+| `list_issues` | List and filter repository issues |
 | `github_create_issue` | Create new issues with labels |
-| `github_update_issue` | Update issue state and content |
+| `update_github_issue` | Update issue state and content |
 | `github_create_pr` | Create pull requests |
+| `add_issue_progress_comment` | Add progress comment to an issue |
 
 ### Asana Tools
 
@@ -118,27 +117,24 @@ ai:
 | `asana_update_task` | Update task status |
 | `asana_analyze_task` | Analyze task for auto-fix suitability |
 
-### Git Tools
+### Git Tools (Internal)
+
+These tools are used internally by the autofix pipeline and are not directly exposed via MCP:
 
 | Tool | Description |
 |------|-------------|
-| `git_create_worktree` | Create isolated worktree |
-| `git_remove_worktree` | Remove worktree with cleanup |
-| `git_list_worktrees` | List active worktrees |
+| `git_worktree` | Unified worktree management (create/remove/list via action parameter) |
 
-### Check Tools
+### Workflow Tools (Internal)
 
-| Tool | Description |
-|------|-------------|
-| `run_checks` | Execute typecheck, lint, test |
-
-### Workflow Tools
+These tools are used internally by the autofix pipeline:
 
 | Tool | Description |
 |------|-------------|
-| `group_issues` | Group related issues by component |
-| `triage` | Prioritize and categorize issues |
-| `autofix` | Execute full auto-fix workflow |
+| `group_issues` | Group related issues by component/file/label |
+| `run_checks` | Execute typecheck, lint, test in worktree |
+
+> **Note:** `triage` and `autofix` are CLI commands, not MCP tools. See [Commands](#commands) for usage.
 
 ## Commands
 
@@ -151,46 +147,132 @@ npx auto-fix-workflow init
 ```
 
 Options:
-- `--non-interactive`: Read tokens from environment variables
-- `--force`: Overwrite existing files
-- `--skip-validation`: Skip token validation
+- `-n, --non-interactive`: Read tokens from `GITHUB_TOKEN` and `ASANA_TOKEN` environment variables
+- `-f, --force`: Overwrite existing configuration files
+- `-s, --skip-validation`: Skip token validation steps
 
 ### Triage Command
 
-Analyze and prioritize issues for processing:
+Analyze Asana tasks and create GitHub issues:
 
 ```bash
-npx auto-fix-workflow triage --label auto-fix --limit 10
+# Interactive mode (select tasks from UI)
+npx auto-fix-workflow triage
+
+# Batch mode (process all tasks automatically)
+npx auto-fix-workflow triage --mode batch
+
+# Single task by GID
+npx auto-fix-workflow triage 1234567890
+
+# Dry run with project filter
+npx auto-fix-workflow triage --dry-run --project 1234567890
 ```
 
 Options:
-- `--label`: Filter by label
-- `--state`: Filter by state (open/closed)
-- `--limit`: Maximum issues to process
-- `--dry-run`: Preview without making changes
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--mode <mode>` | `-m` | enum | `interactive` | Mode: `interactive`, `batch`, `single` |
+| `--dry-run` | `-d` | boolean | `false` | Preview without making changes |
+| `--project <gid>` | `-p` | string | - | Asana project GID |
+| `--section <gid>` | `-s` | string | - | Asana section GID |
+| `--priority <level>` | `-P` | enum | - | Filter: `critical`, `high`, `medium`, `low` |
+| `--limit <n>` | `-l` | number | - | Maximum tasks to process |
+| `--yes` | `-y` | boolean | `false` | Skip confirmation prompts |
+| `--verbose` | `-v` | boolean | `false` | Enable verbose output |
+
+Positional argument: Task GID (numeric) for single-task processing.
 
 ### Autofix Command
 
 Execute automated fix workflow:
 
 ```bash
-npx auto-fix-workflow autofix --issues 1,2,3
+# Process all auto-fix labeled issues
+npx auto-fix-workflow autofix --all
+
+# Fix specific issues
+npx auto-fix-workflow autofix --issues 123,456
+
+# Dry run (preview only)
+npx auto-fix-workflow autofix --all --dry-run
+
+# Custom grouping and parallelism
+npx auto-fix-workflow autofix --all --group-by file --max-parallel 5
 ```
 
 Options:
-- `--issues`: Comma-separated issue numbers
-- `--group-by`: Grouping strategy (component/file/none)
-- `--fail-fast`: Stop on first failure
-- `--dry-run`: Preview operations
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--all` | boolean | `false` | Process all auto-fix labeled issues |
+| `--issues <nums>` | string | - | Comma-separated issue numbers |
+| `--group-by <strategy>` | enum | `component` | Grouping: `component`, `file`, `label`, `type`, `priority` |
+| `--max-parallel <n>` | number | `3` | Maximum parallel worktrees (1-10) |
+| `--dry-run` | boolean | `false` | Preview without making changes |
+| `--max-retries <n>` | number | `3` | Maximum retry attempts per group (1-10) |
+| `--labels <labels>` | string | - | Filter issues by labels (comma-separated) |
+| `--exclude-labels <labels>` | string | - | Exclude issues with these labels |
+| `--base-branch <name>` | string | `autofixing` | Base branch for PRs |
+| `--verbose` | boolean | `false` | Enable verbose output |
+| `--config <path>` | string | - | Path to config file |
+
+> **Note:** `--all` and `--issues` are mutually exclusive.
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GITHUB_TOKEN` | GitHub personal access token | Yes |
-| `ASANA_TOKEN` | Asana personal access token | For Asana features |
-| `AUTO_FIX_CONFIG` | Custom config file path | No |
-| `LOG_LEVEL` | Logging level (debug/info/warn/error) | No |
+### Required
+
+| Variable | Description |
+|----------|-------------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token |
+
+### Optional - GitHub
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GITHUB_OWNER` | - | Repository owner (can also set in `.auto-fix.yaml`) |
+| `GITHUB_REPO` | - | Repository name |
+| `GITHUB_API_URL` | - | Custom GitHub API URL (for Enterprise) |
+| `GITHUB_DEFAULT_BRANCH` | `main` | Default branch name |
+| `AUTOFIX_LABEL` | `auto-fix` | Label for auto-fix target issues |
+| `AUTOFIX_SKIP_LABEL` | `auto-fix-skip` | Label to exclude issues |
+
+### Optional - Asana
+
+| Variable | Description |
+|----------|-------------|
+| `ASANA_TOKEN` | Asana Personal Access Token (required for triage) |
+| `ASANA_DEFAULT_PROJECT_GID` | Default Asana project GID |
+| `ASANA_TRIAGE_SECTION` | Section name to scan for triage |
+| `ASANA_PROCESSED_SECTION` | Section name for processed tasks |
+| `ASANA_SYNCED_TAG` | Tag name for synced tasks |
+| `TRIAGE_MAX_BATCH_SIZE` | Maximum batch size for triage |
+
+### Optional - Worktree
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WORKTREE_BASE_DIR` | `.worktrees` | Base directory for worktrees |
+| `WORKTREE_MAX_CONCURRENT` | `3` | Maximum concurrent worktrees |
+| `WORKTREE_PREFIX` | `autofix-` | Branch name prefix |
+
+### Optional - Checks
+
+| Variable | Description |
+|----------|-------------|
+| `TEST_COMMAND` | Custom test command (auto-detected from package.json) |
+| `TYPECHECK_COMMAND` | Custom typecheck command |
+| `LINT_COMMAND` | Custom lint command |
+
+### Optional - Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTO_FIX_CONFIG` | `.auto-fix.yaml` | Custom config file path |
+| `LOG_LEVEL` | `info` | Log level: `trace`, `debug`, `info`, `warn`, `error`, `fatal` |
+| `LOG_PRETTY` | `true` (dev) | Enable pretty log formatting |
+| `LOG_REDACT` | `true` | Redact sensitive data in logs |
+| `NO_COLOR` | - | Disable colored output |
 
 ## API Token Scopes
 
@@ -419,6 +501,34 @@ npx sdd-tool list
 ```
 
 Specs are located in `.sdd/specs/` directory.
+
+## Autofix Pipeline
+
+The autofix command processes issues through a 9-stage pipeline:
+
+```
+Stage 1: Worktree Create    → Create isolated Git worktree
+Stage 2: AI Analysis         → Analyze issues with Claude CLI
+Stage 3: AI Fix              → Generate code fixes with Claude CLI
+Stage 4: Install Deps        → Install dependencies (npm install)
+Stage 5: Quality Checks      → Run typecheck → lint → test
+Stage 6: Commit & Push       → Commit changes and push branch
+Stage 7: Create PR           → Create pull request → autofixing branch
+Stage 8: Update Issues       → Add PR link comment to issues
+Stage 9: Cleanup             → Remove worktree
+```
+
+Issues are grouped by strategy (component, file, label, etc.) and processed in parallel using Git worktrees. Failed checks trigger automatic retry with AI-adjusted fixes.
+
+### Branch Strategy
+
+```
+main ◀─────────────── (manual merge)
+  └── autofixing ◀─── (PR target)
+        ├── fix/issue-123
+        ├── fix/issue-124-125 (grouped)
+        └── fix/issue-126
+```
 
 ## Architecture
 
