@@ -51,9 +51,11 @@ export class ProcessingQueue {
   private readonly processing: Set<string> = new Set();
   private readonly completed: Map<string, GroupResult> = new Map();
   private readonly listeners: QueueEventListener[] = [];
+  private readonly activePromises: Map<string, Promise<void>> = new Map();
   private processFunction?: ProcessFunction;
   private isRunning = false;
   private isPaused = false;
+  private resumeResolve?: () => void;
 
   constructor(maxConcurrency: number = 3, maxRetries: number = 3) {
     this.maxConcurrency = maxConcurrency;
@@ -110,27 +112,32 @@ export class ProcessingQueue {
     this.isPaused = false;
 
     // Process until all items complete
-    while (this.isRunning && (this.pending.length > 0 || this.processing.size > 0)) {
-      // Wait if paused
-      while (this.isPaused && this.isRunning) {
-        await this.delay(100);
+    while (this.isRunning && (this.pending.length > 0 || this.activePromises.size > 0)) {
+      // Wait if paused (event-driven, no polling)
+      if (this.isPaused && this.isRunning) {
+        await new Promise<void>(resolve => {
+          this.resumeResolve = resolve;
+        });
+        if (!this.isRunning) break;
       }
 
       // Start new items up to concurrency limit
       while (
         this.pending.length > 0 &&
-        this.processing.size < this.maxConcurrency &&
+        this.activePromises.size < this.maxConcurrency &&
         !this.isPaused
       ) {
         const itemId = this.pending.shift();
         if (itemId) {
-          this.processItem(itemId);
+          const promise = this.processItem(itemId);
+          this.activePromises.set(itemId, promise);
+          promise.finally(() => this.activePromises.delete(itemId));
         }
       }
 
-      // Wait for some processing to complete
-      if (this.processing.size > 0) {
-        await this.delay(100);
+      // Wait for at least one item to complete (no polling)
+      if (this.activePromises.size > 0) {
+        await Promise.race(this.activePromises.values());
       }
     }
 
@@ -152,6 +159,10 @@ export class ProcessingQueue {
    */
   resume(): void {
     this.isPaused = false;
+    if (this.resumeResolve) {
+      this.resumeResolve();
+      this.resumeResolve = undefined;
+    }
   }
 
   /**
@@ -159,9 +170,14 @@ export class ProcessingQueue {
    */
   async stop(): Promise<void> {
     this.isRunning = false;
+    // Unblock any pause wait
+    if (this.resumeResolve) {
+      this.resumeResolve();
+      this.resumeResolve = undefined;
+    }
     // Wait for current processing to complete
-    while (this.processing.size > 0) {
-      await this.delay(100);
+    if (this.activePromises.size > 0) {
+      await Promise.allSettled(this.activePromises.values());
     }
   }
 
@@ -171,6 +187,11 @@ export class ProcessingQueue {
   forceStop(): void {
     this.isRunning = false;
     this.isPaused = false;
+    // Unblock any pause wait
+    if (this.resumeResolve) {
+      this.resumeResolve();
+      this.resumeResolve = undefined;
+    }
   }
 
   /**
@@ -304,12 +325,6 @@ export class ProcessingQueue {
     }
   }
 
-  /**
-   * Delay helper
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 }
 
 /**

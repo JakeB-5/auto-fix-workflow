@@ -67,8 +67,8 @@ describe('runChecks', () => {
   });
 
   it('should detect package manager from lock file', async () => {
-    // Create pnpm lock file
-    await fs.writeFile(path.join(tempDir, 'pnpm-lock.yaml'), '');
+    // Create npm lock file (npm is always available with Node.js)
+    await fs.writeFile(path.join(tempDir, 'package-lock.json'), '{}');
 
     // Create package.json with test script
     const packageJson = {

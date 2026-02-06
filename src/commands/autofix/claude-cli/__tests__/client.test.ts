@@ -36,13 +36,17 @@ vi.mock('../timer-utils.js', () => ({
 
 /** Helper: create a mock child process */
 function createMockProcess() {
+  const stdin = new Writable({
+    write(chunk: any, encoding: any, callback: any) {
+      if (typeof callback === 'function') callback();
+      return true;
+    },
+  });
+  // Suppress EPIPE errors that can leak in forks pool
+  stdin.on('error', () => {});
+
   return Object.assign(new EventEmitter(), {
-    stdin: new Writable({
-      write(chunk: any, encoding: any, callback: any) {
-        if (typeof callback === 'function') callback();
-        return true;
-      },
-    }),
+    stdin,
     stdout: new EventEmitter(),
     stderr: new EventEmitter(),
     kill: vi.fn(),
@@ -70,11 +74,16 @@ describe('client', () => {
     // listeners are already set up by then, so synchronous emission is safe
     // and avoids process.nextTick / setTimeout(0) portability issues across
     // vitest pools (vmThreads vs forks) and CI environments.
+    let stderrWriteSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
       vi.useFakeTimers();
+      // Suppress process.stderr.write to prevent EPIPE in forks pool
+      stderrWriteSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     });
 
     afterEach(() => {
+      stderrWriteSpy.mockRestore();
       vi.useRealTimers();
     });
 
