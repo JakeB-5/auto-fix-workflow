@@ -477,22 +477,33 @@ describe('client', () => {
   });
 
   describe('safeInvokeClaude', () => {
-    // sleep is mocked via vi.mock('../timer-utils.js') to resolve immediately,
-    // so no fake timers are needed for retry tests.
+    // sleep is mocked via vi.mock('../timer-utils.js') to resolve immediately.
+    // Use setTimeout(fn, 0) instead of process.nextTick for mock event emission
+    // because process.nextTick is unreliable in vitest's vmThreads pool.
+
+    /** Helper: create a spawn mock that emits events via setTimeout(0) */
+    function mockSpawnWithEvents(
+      eventsFn: (proc: ReturnType<typeof createMockProcess>) => void
+    ) {
+      mockSpawn.mockImplementation(() => {
+        const proc = createMockProcess();
+        setTimeout(() => eventsFn(proc), 0);
+        return proc;
+      });
+    }
 
     it('should return result on first success', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
-      const resultPromise = safeInvokeClaude(options);
-
-      process.nextTick(() => {
-        mockProcess.stdout?.emit('data', Buffer.from('success'));
-        mockProcess.emit('close', 0);
+      mockSpawnWithEvents((proc) => {
+        proc.stdout?.emit('data', Buffer.from('success'));
+        proc.emit('close', 0);
       });
 
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options);
 
       expect(result.success).toBe(true);
       expect(mockSpawn).toHaveBeenCalledTimes(1);
@@ -501,15 +512,16 @@ describe('client', () => {
     it('should retry on rate limit error', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
+        const currentAttempt = ++attempt;
 
-        process.nextTick(() => {
-          attempt++;
-          if (attempt === 1) {
+        setTimeout(() => {
+          if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
               Buffer.from('Rate limit exceeded')
@@ -519,7 +531,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        });
+        }, 0);
 
         return proc;
       });
@@ -533,15 +545,16 @@ describe('client', () => {
     it('should retry on overloaded error', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
+        const currentAttempt = ++attempt;
 
-        process.nextTick(() => {
-          attempt++;
-          if (attempt === 1) {
+        setTimeout(() => {
+          if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
               Buffer.from('Service is overloaded')
@@ -551,7 +564,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        });
+        }, 0);
 
         return proc;
       });
@@ -564,22 +577,23 @@ describe('client', () => {
     it('should use exponential backoff', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
+        const currentAttempt = ++attempt;
 
-        process.nextTick(() => {
-          attempt++;
-          if (attempt < 3) {
+        setTimeout(() => {
+          if (currentAttempt < 3) {
             proc.stderr?.emit('data', Buffer.from('Rate limit'));
             proc.emit('close', 1);
           } else {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        });
+        }, 0);
 
         return proc;
       });
@@ -596,44 +610,40 @@ describe('client', () => {
     it('should not retry on CLI_NOT_FOUND error', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
-      const resultPromise = safeInvokeClaude(options, 3);
-
-      process.nextTick(() => {
-        const error: NodeJS.ErrnoException = new Error('spawn ENOENT');
-        error.code = 'ENOENT';
-        mockProcess.emit('error', error);
+      mockSpawn.mockImplementation(() => {
+        const proc = createMockProcess();
+        setTimeout(() => {
+          const error: NodeJS.ErrnoException = new Error('spawn ENOENT');
+          error.code = 'ENOENT';
+          proc.emit('error', error);
+        }, 0);
+        return proc;
       });
 
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(false);
       expect(mockSpawn).toHaveBeenCalledTimes(1);
     });
 
-    it.skip('should not retry on TIMEOUT error', async () => {
-      // This test is skipped because testing timeout behavior with mocks
-      // is complex and the retry logic is already tested in other tests
-      // The timeout handling code path is verified through integration tests
-    });
-
     it('should return error on non-retryable failure', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
-      const resultPromise = safeInvokeClaude(options, 3);
-
-      process.nextTick(() => {
-        mockProcess.stderr?.emit(
+      mockSpawnWithEvents((proc) => {
+        proc.stderr?.emit(
           'data',
           Buffer.from('Invalid API key')
         );
-        mockProcess.emit('close', 1);
+        proc.emit('close', 1);
       });
 
-      const result = await resultPromise;
+      const result = await safeInvokeClaude(options, 3);
 
       expect(result.success).toBe(false);
       expect(mockSpawn).toHaveBeenCalledTimes(1);
@@ -642,15 +652,14 @@ describe('client', () => {
     it('should return last error after max retries', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-
-        process.nextTick(() => {
+        setTimeout(() => {
           proc.emit('error', new Error('Persistent error'));
-        });
-
+        }, 0);
         return proc;
       });
 
@@ -666,16 +675,15 @@ describe('client', () => {
     it('should default to 3 retries', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
-
-        process.nextTick(() => {
+        setTimeout(() => {
           proc.stderr?.emit('data', Buffer.from('Rate limit'));
           proc.emit('close', 1);
-        });
-
+        }, 0);
         return proc;
       });
 
@@ -687,15 +695,16 @@ describe('client', () => {
     it('should handle case-insensitive error messages', async () => {
       const options: ClaudeOptions = {
         prompt: 'Test',
+        timeout: 5000,
       };
 
       let attempt = 0;
       mockSpawn.mockImplementation(() => {
         const proc = createMockProcess();
+        const currentAttempt = ++attempt;
 
-        process.nextTick(() => {
-          attempt++;
-          if (attempt === 1) {
+        setTimeout(() => {
+          if (currentAttempt === 1) {
             proc.stderr?.emit(
               'data',
               Buffer.from('RATE LIMIT EXCEEDED')
@@ -705,7 +714,7 @@ describe('client', () => {
             proc.stdout?.emit('data', Buffer.from('success'));
             proc.emit('close', 0);
           }
-        });
+        }, 0);
 
         return proc;
       });
