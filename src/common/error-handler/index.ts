@@ -51,6 +51,8 @@ export type {
   WorktreeErrorCode,
   CheckErrorCode,
   ParseErrorCode,
+  PipelineErrorCode,
+  IssueErrorCode,
 } from './codes.js';
 
 export {
@@ -82,6 +84,12 @@ export type { CheckExecutionErrorContext } from './check-error.js';
 export { ParseError } from './parse-error.js';
 export type { ParseErrorContext } from './parse-error.js';
 
+export { PipelineError } from './pipeline-error.js';
+export type { PipelineErrorContext } from './pipeline-error.js';
+
+export { IssueError } from './issue-error.js';
+export type { IssueErrorContext } from './issue-error.js';
+
 // Serialization
 export {
   serializeError,
@@ -105,12 +113,16 @@ export {
   isWorktreeError,
   isCheckExecutionError,
   isParseError,
+  isPipelineError,
+  isIssueError,
   isConfigErrorCode,
   isGitHubErrorCode,
   isAsanaErrorCode,
   isWorktreeErrorCode,
   isCheckErrorCode,
   isParseErrorCode,
+  isPipelineErrorCode,
+  isIssueErrorCode,
   getErrorCategory,
   isRetryableError,
   isClientError,

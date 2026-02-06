@@ -55,8 +55,10 @@ export function generateBranchName(
   const branchName = parts.join('/');
 
   // 길이 제한
-  if (branchName.length > opts.maxLength) {
-    return truncateBranchName(branchName, opts.maxLength, opts.separator);
+  const maxLen = (opts.maxLength !== undefined ? opts.maxLength : DEFAULT_OPTIONS.maxLength) as number;
+  const separator = (opts.separator !== undefined ? opts.separator : DEFAULT_OPTIONS.separator) as string;
+  if (branchName.length > maxLen) {
+    return truncateBranchName(branchName, maxLen, separator);
   }
 
   return branchName;
@@ -70,8 +72,9 @@ export function generateBranchName(
  */
 function generateIdentifier(group: IssueGroup): string {
   // 컴포넌트가 있으면 우선 사용
-  if (group.components.length > 0) {
-    return sanitize(group.components[0]);
+  const firstComponent = group.components[0];
+  if (firstComponent !== undefined) {
+    return sanitize(firstComponent);
   }
 
   // groupBy에 따라 key 사용
@@ -144,18 +147,22 @@ function truncateBranchName(
 
   if (issueMatch) {
     const issuePart = issueMatch[1];
+    if (issuePart === undefined) {
+      return branchName.substring(0, maxLength);
+    }
     const identifierPart = rest.substring(0, rest.length - issuePart.length - 1);
 
     // prefix + identifier + issue 길이 계산
-    const requiredLength = prefix.length + 1 + issuePart.length + 1; // +1 for slashes
+    const prefixStr = prefix ?? '';
+    const requiredLength = prefixStr.length + 1 + issuePart.length + 1; // +1 for slashes
     const availableForIdentifier = maxLength - requiredLength;
 
     if (availableForIdentifier > 0) {
       const truncatedIdentifier = identifierPart.substring(0, availableForIdentifier);
-      return `${prefix}/${truncatedIdentifier}/${issuePart}`;
+      return `${prefixStr}/${truncatedIdentifier}/${issuePart}`;
     } else {
       // identifier를 완전히 생략
-      return `${prefix}/${issuePart}`;
+      return `${prefixStr}/${issuePart}`;
     }
   }
 

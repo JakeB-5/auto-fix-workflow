@@ -103,15 +103,34 @@ async function createIssueWithRetry(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const { data } = await octokit.rest.issues.create({
+      const createParams: {
+        owner: string;
+        repo: string;
+        title: string;
+        body: string;
+        labels?: string[];
+        assignees?: string[];
+        milestone?: number;
+      } = {
         owner: params.owner,
         repo: params.repo,
         title: params.title,
         body: params.body,
-        labels: params.labels as string[] | undefined,
-        assignees: params.assignees as string[] | undefined,
-        milestone: params.milestone,
-      });
+      };
+
+      if (params.labels !== undefined && params.labels.length > 0) {
+        createParams.labels = params.labels as string[];
+      }
+
+      if (params.assignees !== undefined && params.assignees.length > 0) {
+        createParams.assignees = params.assignees as string[];
+      }
+
+      if (params.milestone !== undefined) {
+        createParams.milestone = params.milestone;
+      }
+
+      const { data } = await octokit.rest.issues.create(createParams);
 
       // Convert Octokit response to our Issue type
       const issue = convertOctokitIssueToIssue(data);

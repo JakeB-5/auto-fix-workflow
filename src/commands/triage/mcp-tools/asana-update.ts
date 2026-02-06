@@ -62,17 +62,17 @@ export class AsanaUpdateTool {
 
         if (params.appendNotes !== undefined) {
           // Note: In a real implementation, we'd need to get current notes first
-          updateParams.notes = params.appendNotes;
+          updateParams['notes'] = params.appendNotes;
           updatedFields.push('notes');
         }
 
         if (params.completed !== undefined) {
-          updateParams.completed = params.completed;
+          updateParams['completed'] = params.completed;
           updatedFields.push('completed');
         }
 
         if (params.customFields) {
-          updateParams.custom_fields = params.customFields;
+          updateParams['custom_fields'] = params.customFields;
           updatedFields.push('custom_fields');
         }
 

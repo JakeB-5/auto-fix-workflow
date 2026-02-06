@@ -117,7 +117,7 @@ export async function getWorktreeStatus(
       issueNumbers: [], // 이슈 번호는 별도 메타데이터에서 조회 필요
       createdAt: new Date(), // 생성 시간은 별도 메타데이터에서 조회 필요
       lastActivityAt,
-      headCommit,
+      headCommit: headCommit ?? '',
     };
 
     return ok(worktreeInfo);

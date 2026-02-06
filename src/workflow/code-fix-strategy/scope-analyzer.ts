@@ -27,17 +27,18 @@ export function analyzeScope(
     totalFiles > MAX_FILES_PER_FIX ||
     directories.length > MAX_DIRECTORIES_PER_FIX;
 
-  const warning: string | undefined = isTooBoard
-    ? generateWarning(totalFiles, directories.length)
-    : undefined;
-
-  return {
+  const result: ScopeAnalysis = {
     totalFiles,
     directories,
     isTooBoard,
-    warning,
     components,
   };
+
+  if (isTooBoard) {
+    (result as { warning?: string }).warning = generateWarning(totalFiles, directories.length);
+  }
+
+  return result;
 }
 
 /**

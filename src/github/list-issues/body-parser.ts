@@ -28,8 +28,8 @@ export function parseIssueBody(body: string): {
   readonly component: string;
   readonly relatedFiles: readonly string[];
   readonly relatedSymbols: readonly string[];
-  readonly codeAnalysis?: CodeAnalysis;
-  readonly suggestedFix?: SuggestedFix;
+  readonly codeAnalysis?: CodeAnalysis | undefined;
+  readonly suggestedFix?: SuggestedFix | undefined;
   readonly acceptanceCriteria: readonly AcceptanceCriteria[];
   readonly relatedIssues: readonly number[];
 } {
@@ -105,17 +105,35 @@ export function parseIssueBody(body: string): {
     }
   }
 
-  return {
+  const result: {
+    readonly type: IssueType;
+    readonly priority: IssuePriority;
+    readonly component: string;
+    readonly relatedFiles: readonly string[];
+    readonly relatedSymbols: readonly string[];
+    readonly codeAnalysis?: CodeAnalysis | undefined;
+    readonly suggestedFix?: SuggestedFix | undefined;
+    readonly acceptanceCriteria: readonly AcceptanceCriteria[];
+    readonly relatedIssues: readonly number[];
+  } = {
     type,
     priority,
     component,
     relatedFiles,
     relatedSymbols,
-    codeAnalysis,
-    suggestedFix,
     acceptanceCriteria,
     relatedIssues,
   };
+
+  // Conditionally add optional properties only if defined
+  if (codeAnalysis !== undefined) {
+    return { ...result, codeAnalysis };
+  }
+  if (suggestedFix !== undefined) {
+    return { ...result, suggestedFix };
+  }
+
+  return result;
 }
 
 /**

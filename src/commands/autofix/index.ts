@@ -24,11 +24,13 @@ import { createInterruptHandler, withCleanup, removeSignalHandlers } from './int
 import { createWorktreeManager } from './worktree-manager.js';
 import { createAutofixResult, printReport, generateSummaryLine } from './report.js';
 import { executeDryRun, checkConflicts } from './dry-run.js';
-import { AutofixError } from './error-system.js';
+import { AutofixError } from '../../common/error-handler/index.js';
+import { ErrorAggregator } from './error-utils.js';
 
 // Re-export types
 export type { AutofixOptions, AutofixResult, GroupResult } from './types.js';
-export { AutofixError } from './error-system.js';
+export { AutofixError } from '../../common/error-handler/index.js';
+export { ErrorAggregator } from './error-utils.js';
 
 /**
  * Run autofix error
@@ -273,10 +275,22 @@ export async function runAutofix(
       });
     }
 
-    const autofixError = AutofixError.from(error);
+    // Convert error to RunAutofixError
+    let code = 'PIPELINE_FAILED';
+    let message = 'Unknown error';
+
+    if (error instanceof AutofixError) {
+      code = error.code;
+      message = error.message;
+    } else if (error instanceof Error) {
+      message = error.message;
+    } else {
+      message = String(error);
+    }
+
     const errorResult: RunAutofixError = {
-      code: autofixError.code,
-      message: autofixError.message,
+      code,
+      message,
     };
     if (error instanceof Error) {
       (errorResult as { cause?: Error }).cause = error;

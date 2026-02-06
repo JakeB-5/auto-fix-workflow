@@ -18,7 +18,7 @@ export interface FileChange {
   /** Number of deleted lines */
   readonly deletions: number;
   /** File content (if added or modified) */
-  readonly content?: string;
+  readonly content?: string | undefined;
 }
 
 /**
@@ -48,7 +48,7 @@ export interface FixAttempt {
   /** Timestamp */
   readonly timestamp: Date;
   /** Error message if failed */
-  readonly error?: string;
+  readonly error?: string | undefined;
 }
 
 /**
@@ -62,7 +62,7 @@ export interface ScopeAnalysis {
   /** Whether changes are too broad */
   readonly isTooBoard: boolean;
   /** Warning message if too broad */
-  readonly warning?: string;
+  readonly warning?: string | undefined;
   /** Affected components */
   readonly components: readonly string[];
 }
@@ -90,9 +90,9 @@ export interface FixError {
   /** Error message */
   readonly message: string;
   /** Failed attempts */
-  readonly attempts?: readonly FixAttempt[];
+  readonly attempts?: readonly FixAttempt[] | undefined;
   /** Additional context */
-  readonly context?: Record<string, unknown>;
+  readonly context?: Record<string, unknown> | undefined;
 }
 
 /**

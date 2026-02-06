@@ -31,7 +31,7 @@ export interface IssueGroup {
   /** 관련 컴포넌트 목록 */
   readonly components: readonly string[];
   /** 총 예상 작업량 */
-  readonly estimatedEffort?: number;
+  readonly estimatedEffort?: number | undefined;
   /** 우선순위 (그룹 내 최고 우선순위) */
   readonly priority: 'critical' | 'high' | 'medium' | 'low';
 }
@@ -45,13 +45,13 @@ export interface GroupIssuesParams {
   /** 그룹화 기준 */
   readonly groupBy: GroupBy;
   /** 최대 그룹 크기 (기본값: 5) */
-  readonly maxGroupSize?: number;
+  readonly maxGroupSize?: number | undefined;
   /** 최소 그룹 크기 (기본값: 1) */
-  readonly minGroupSize?: number;
+  readonly minGroupSize?: number | undefined;
   /** 라벨 필터 */
-  readonly labels?: readonly string[];
+  readonly labels?: readonly string[] | undefined;
   /** 제외 라벨 */
-  readonly excludeLabels?: readonly string[];
+  readonly excludeLabels?: readonly string[] | undefined;
 }
 
 /**
@@ -88,15 +88,15 @@ export interface GroupProcessingResult {
   /** 처리 상태 */
   readonly status: GroupProcessingStatus;
   /** Worktree 경로 */
-  readonly worktreePath?: string;
+  readonly worktreePath?: string | undefined;
   /** 생성된 PR 번호 */
-  readonly prNumber?: number;
+  readonly prNumber?: number | undefined;
   /** 에러 메시지 */
-  readonly error?: string;
+  readonly error?: string | undefined;
   /** 시작 시간 */
-  readonly startedAt?: Date;
+  readonly startedAt?: Date | undefined;
   /** 완료 시간 */
-  readonly completedAt?: Date;
+  readonly completedAt?: Date | undefined;
 }
 
 /**
@@ -104,13 +104,13 @@ export interface GroupProcessingResult {
  */
 export interface BranchNameOptions {
   /** 접두사 (기본값: fix/) */
-  readonly prefix?: string;
+  readonly prefix?: string | undefined;
   /** 최대 길이 (기본값: 50) */
-  readonly maxLength?: number;
+  readonly maxLength?: number | undefined;
   /** 구분자 (기본값: -) */
-  readonly separator?: string;
+  readonly separator?: string | undefined;
   /** 이슈 번호 포함 여부 (기본값: true) */
-  readonly includeIssueNumbers?: boolean;
+  readonly includeIssueNumbers?: boolean | undefined;
 }
 
 /**
@@ -129,7 +129,7 @@ export interface GroupingStrategy {
   /** 기본 그룹화 기준 */
   readonly primaryGroupBy: GroupBy;
   /** 보조 그룹화 기준 (선택사항) */
-  readonly secondaryGroupBy?: GroupBy;
+  readonly secondaryGroupBy?: GroupBy | undefined;
   /** 병합 전략 */
   readonly mergeStrategy: MergeStrategy;
   /** 최대 그룹 크기 */

@@ -109,16 +109,16 @@ export async function createTag(
   };
 
   if (color) {
-    tagData.color = color;
+    tagData['color'] = color;
   }
 
   const response = await client.tags.createTag({ data: tagData });
   const t = response.data as Record<string, unknown>;
 
   const tag: TagInfo = {
-    gid: t.gid as string,
-    name: t.name as string,
-    color: (t.color as string) ?? null,
+    gid: t['gid'] as string,
+    name: t['name'] as string,
+    color: (t['color'] as string) ?? null,
   };
 
   // Update cache

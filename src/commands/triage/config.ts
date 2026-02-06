@@ -189,27 +189,27 @@ export function validateConfig(config: TriageConfig): Result<TriageConfig, Error
 export function getEnvConfig(): Partial<MutableTriageConfig> {
   const envConfig: Partial<MutableTriageConfig> = {};
 
-  const projectGid = process.env.ASANA_DEFAULT_PROJECT_GID;
+  const projectGid = process.env['ASANA_DEFAULT_PROJECT_GID'];
   if (projectGid) {
     envConfig.defaultProjectGid = projectGid;
   }
 
-  const triageSection = process.env.ASANA_TRIAGE_SECTION;
+  const triageSection = process.env['ASANA_TRIAGE_SECTION'];
   if (triageSection) {
     envConfig.triageSectionName = triageSection;
   }
 
-  const processedSection = process.env.ASANA_PROCESSED_SECTION;
+  const processedSection = process.env['ASANA_PROCESSED_SECTION'];
   if (processedSection) {
     envConfig.processedSectionName = processedSection;
   }
 
-  const syncedTag = process.env.ASANA_SYNCED_TAG;
+  const syncedTag = process.env['ASANA_SYNCED_TAG'];
   if (syncedTag) {
     envConfig.syncedTagName = syncedTag;
   }
 
-  const maxBatchSize = process.env.TRIAGE_MAX_BATCH_SIZE;
+  const maxBatchSize = process.env['TRIAGE_MAX_BATCH_SIZE'];
   if (maxBatchSize) {
     const parsed = parseInt(maxBatchSize, 10);
     if (!isNaN(parsed)) {

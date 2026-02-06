@@ -35,7 +35,7 @@ export async function updateIssue(
 ): Promise<Result<Issue, GitHubApiError>> {
   try {
     const octokit = new Octokit({
-      auth: process.env.GITHUB_TOKEN,
+      auth: process.env['GITHUB_TOKEN'],
     });
 
     const { owner, repo, issueNumber, title, body, state, labels, assignees, addComment } = params;
@@ -154,7 +154,7 @@ export async function addProgressComment(
 ): Promise<Result<void, GitHubApiError>> {
   try {
     const octokit = new Octokit({
-      auth: process.env.GITHUB_TOKEN,
+      auth: process.env['GITHUB_TOKEN'],
     });
 
     const comment = generateProgressComment(status, details);

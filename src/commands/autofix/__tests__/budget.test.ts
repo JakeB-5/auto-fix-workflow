@@ -11,7 +11,7 @@ import {
   DEFAULT_BUDGET_CONFIG,
   type BudgetConfig,
 } from '../budget.js';
-import type { AIConfig } from '../ai-integration.js';
+import type { AIConfig } from '../claude-cli/index.js';
 
 describe('BudgetTracker', () => {
   describe('construction', () => {

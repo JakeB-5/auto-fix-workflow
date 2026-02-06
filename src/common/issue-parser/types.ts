@@ -66,7 +66,7 @@ export interface GivenWhenThenScenario {
  * Extended acceptance criteria with structured scenarios
  */
 export interface ExtendedAcceptanceCriteria extends AcceptanceCriteria {
-  readonly scenario?: GivenWhenThenScenario;
+  readonly scenario?: GivenWhenThenScenario | undefined;
 }
 
 /**

@@ -14,9 +14,9 @@ export type ReportFormat = 'text' | 'json' | 'markdown';
  * Report options
  */
 export interface ReportOptions {
-  readonly format: ReportFormat;
-  readonly verbose: boolean;
-  readonly includeLinks: boolean;
+  readonly format?: ReportFormat | undefined;
+  readonly verbose?: boolean | undefined;
+  readonly includeLinks?: boolean | undefined;
 }
 
 /**

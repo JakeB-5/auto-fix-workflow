@@ -85,7 +85,7 @@ export function generateRetryFeedback(
  * @returns Array of suggestion strings
  */
 function generateSuggestions(
-  failedChecks: readonly { check: CheckType; error?: string; stderr?: string }[]
+  failedChecks: readonly { check: CheckType; error?: string | undefined; stderr?: string | undefined }[]
 ): string[] {
   const suggestions: string[] = [];
 

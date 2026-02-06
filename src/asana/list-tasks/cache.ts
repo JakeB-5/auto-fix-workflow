@@ -73,8 +73,8 @@ async function fetchSections(
     for (const section of response.data) {
       const s = section as Record<string, unknown>;
       sections.push({
-        gid: s.gid as string,
-        name: s.name as string,
+        gid: s['gid'] as string,
+        name: s['name'] as string,
       });
     }
   }

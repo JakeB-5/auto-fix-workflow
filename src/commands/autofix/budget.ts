@@ -3,7 +3,7 @@
  * @description Budget management for AI API cost tracking and limits
  */
 
-import type { AIConfig } from './ai-integration.js';
+import type { AIConfig } from './claude-cli/index.js';
 
 /**
  * Budget configuration for AI API costs

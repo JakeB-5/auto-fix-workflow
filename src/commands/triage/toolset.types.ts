@@ -22,8 +22,8 @@ export type ToolsetMode = 'mcp' | 'direct';
  */
 export interface ListTasksParams {
   readonly projectGid: string;
-  readonly sectionGid?: string;
-  readonly limit?: number;
+  readonly sectionGid?: string | undefined;
+  readonly limit?: number | undefined;
 }
 
 /**

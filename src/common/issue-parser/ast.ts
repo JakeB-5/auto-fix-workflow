@@ -162,7 +162,7 @@ export function findSection(
   for (let i = 0; i < children.length; i++) {
     const node = children[i];
 
-    if (!isHeading(node)) {
+    if (node === undefined || !isHeading(node)) {
       continue;
     }
 
@@ -178,14 +178,16 @@ export function findSection(
     for (let j = i + 1; j < children.length; j++) {
       const nextNode = children[j];
 
+      if (nextNode === undefined) {
+        continue;
+      }
+
       // Stop at next heading of same or higher level
       if (isHeading(nextNode) && nextNode.depth <= headingLevel) {
         break;
       }
 
-      if (nextNode !== undefined) {
-        content.push(nextNode);
-      }
+      content.push(nextNode);
     }
 
     return ok({
@@ -214,7 +216,7 @@ export function findSectionsByPattern(
   for (let i = 0; i < children.length; i++) {
     const node = children[i];
 
-    if (!isHeading(node)) {
+    if (node === undefined || !isHeading(node)) {
       continue;
     }
 
@@ -230,13 +232,15 @@ export function findSectionsByPattern(
     for (let j = i + 1; j < children.length; j++) {
       const nextNode = children[j];
 
+      if (nextNode === undefined) {
+        continue;
+      }
+
       if (isHeading(nextNode) && nextNode.depth <= headingLevel) {
         break;
       }
 
-      if (nextNode !== undefined) {
-        content.push(nextNode);
-      }
+      content.push(nextNode);
     }
 
     results.push({

@@ -359,14 +359,24 @@ export function parseCodeAnalysis(ast: Root): Result<ExtendedCodeAnalysis | null
     }
 
     const firstFrame = stackTrace[0];
-    return ok({
+    const result: ExtendedCodeAnalysis = {
       filePath: firstFrame?.file ?? '',
-      startLine: firstFrame?.line,
-      functionName: firstFrame?.function,
       stackTrace,
-      errorMessage: extractErrorMessage(fullText),
-      errorType: extractErrorType(fullText),
-      snippet: codeBlocks[0]?.value,
+    };
+
+    const startLine = firstFrame?.line;
+    const functionName = firstFrame?.function;
+    const errorMessage = extractErrorMessage(fullText);
+    const errorType = extractErrorType(fullText);
+    const snippet = codeBlocks[0]?.value;
+
+    return ok({
+      ...result,
+      ...(startLine !== undefined && { startLine }),
+      ...(functionName !== undefined && { functionName }),
+      ...(errorMessage !== undefined && { errorMessage }),
+      ...(errorType !== undefined && { errorType }),
+      ...(snippet !== undefined && { snippet }),
     });
   }
 
@@ -398,16 +408,27 @@ export function parseCodeAnalysis(ast: Root): Result<ExtendedCodeAnalysis | null
     errorMessage = extractErrorMessage(sectionText + '\n' + (snippet ?? ''));
   }
 
-  return ok({
+  const result: ExtendedCodeAnalysis = {
     filePath: extractFilePath(sectionText, section.content.find(isCode) as Code | undefined),
-    startLine: lineNumbers.start,
-    endLine: lineNumbers.end,
-    functionName: extractFunctionName(sectionText),
-    className: extractClassName(sectionText),
-    snippet,
-    stackTrace: stackTrace.length > 0 ? stackTrace : undefined,
-    errorMessage,
-    errorType: extractErrorType(sectionText + '\n' + (snippet ?? '')),
+  };
+
+  const startLine = lineNumbers.start;
+  const endLine = lineNumbers.end;
+  const functionName = extractFunctionName(sectionText);
+  const className = extractClassName(sectionText);
+  const stackTraceResult = stackTrace.length > 0 ? stackTrace : undefined;
+  const errorType = extractErrorType(sectionText + '\n' + (snippet ?? ''));
+
+  return ok({
+    ...result,
+    ...(startLine !== undefined && { startLine }),
+    ...(endLine !== undefined && { endLine }),
+    ...(functionName !== undefined && { functionName }),
+    ...(className !== undefined && { className }),
+    ...(snippet !== undefined && { snippet }),
+    ...(stackTraceResult !== undefined && { stackTrace: stackTraceResult }),
+    ...(errorMessage !== undefined && { errorMessage }),
+    ...(errorType !== undefined && { errorType }),
   });
 }
 
@@ -427,14 +448,26 @@ export function parseCodeAnalysisFromText(text: string): ExtendedCodeAnalysis | 
 
   const firstFrame = stackTrace[0];
 
-  return {
+  const result: ExtendedCodeAnalysis = {
     filePath: extractFilePath(text) || firstFrame?.file || '',
-    startLine: lineNumbers.start ?? firstFrame?.line,
-    endLine: lineNumbers.end,
-    functionName: extractFunctionName(text) ?? firstFrame?.function,
-    className: extractClassName(text),
-    stackTrace: stackTrace.length > 0 ? stackTrace : undefined,
-    errorMessage: extractErrorMessage(text),
-    errorType: extractErrorType(text),
+  };
+
+  const startLine = lineNumbers.start ?? firstFrame?.line;
+  const endLine = lineNumbers.end;
+  const functionName = extractFunctionName(text) ?? firstFrame?.function;
+  const className = extractClassName(text);
+  const stackTraceResult = stackTrace.length > 0 ? stackTrace : undefined;
+  const errorMessage = extractErrorMessage(text);
+  const errorType = extractErrorType(text);
+
+  return {
+    ...result,
+    ...(startLine !== undefined && { startLine }),
+    ...(endLine !== undefined && { endLine }),
+    ...(functionName !== undefined && { functionName }),
+    ...(className !== undefined && { className }),
+    ...(stackTraceResult !== undefined && { stackTrace: stackTraceResult }),
+    ...(errorMessage !== undefined && { errorMessage }),
+    ...(errorType !== undefined && { errorType }),
   };
 }

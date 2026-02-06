@@ -42,15 +42,15 @@ export class GitHubCreateTool {
       };
 
       if (params.labels && params.labels.length > 0) {
-        toolParams.labels = [...params.labels];
+        toolParams['labels'] = [...params.labels];
       }
 
       if (params.assignees && params.assignees.length > 0) {
-        toolParams.assignees = [...params.assignees];
+        toolParams['assignees'] = [...params.assignees];
       }
 
       if (params.milestone !== undefined) {
-        toolParams.milestone = params.milestone;
+        toolParams['milestone'] = params.milestone;
       }
 
       const result = await this.client.callTool({

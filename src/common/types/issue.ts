@@ -38,9 +38,9 @@ export interface IssueContext {
   /** 원본 소스 정보 */
   readonly source: IssueSource;
   /** 원본 소스 ID (Asana task ID, Sentry issue ID 등) */
-  readonly sourceId?: string;
+  readonly sourceId?: string | undefined;
   /** 원본 소스 URL */
-  readonly sourceUrl?: string;
+  readonly sourceUrl?: string | undefined;
 }
 
 /**
@@ -50,15 +50,15 @@ export interface CodeAnalysis {
   /** 파일 경로 */
   readonly filePath: string;
   /** 시작 라인 */
-  readonly startLine?: number;
+  readonly startLine?: number | undefined;
   /** 종료 라인 */
-  readonly endLine?: number;
+  readonly endLine?: number | undefined;
   /** 함수/메서드 명 */
-  readonly functionName?: string;
+  readonly functionName?: string | undefined;
   /** 클래스명 */
-  readonly className?: string;
+  readonly className?: string | undefined;
   /** 코드 스니펫 */
-  readonly snippet?: string;
+  readonly snippet?: string | undefined;
 }
 
 /**
@@ -104,9 +104,9 @@ export interface Issue {
   /** 이슈 컨텍스트 */
   readonly context: IssueContext;
   /** 코드 분석 정보 */
-  readonly codeAnalysis?: CodeAnalysis;
+  readonly codeAnalysis?: CodeAnalysis | undefined;
   /** 수정 제안 */
-  readonly suggestedFix?: SuggestedFix;
+  readonly suggestedFix?: SuggestedFix | undefined;
   /** 완료 기준 목록 */
   readonly acceptanceCriteria: readonly AcceptanceCriteria[];
   /** 관련 이슈 번호 목록 */
@@ -171,13 +171,13 @@ export interface CreatePRParams {
   /** 소스 브랜치 */
   readonly headBranch: string;
   /** 타겟 브랜치 (기본값: main) */
-  readonly baseBranch?: string;
+  readonly baseBranch?: string | undefined;
   /** 연결할 이슈 번호 목록 */
-  readonly linkedIssues?: readonly number[];
+  readonly linkedIssues?: readonly number[] | undefined;
   /** 라벨 목록 */
-  readonly labels?: readonly string[];
+  readonly labels?: readonly string[] | undefined;
   /** 리뷰어 목록 */
-  readonly reviewers?: readonly string[];
+  readonly reviewers?: readonly string[] | undefined;
   /** Draft PR 여부 */
-  readonly draft?: boolean;
+  readonly draft?: boolean | undefined;
 }

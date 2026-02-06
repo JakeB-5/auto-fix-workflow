@@ -78,6 +78,28 @@ export type ParseErrorCode =
   | 'PARSE_ENCODING_ERROR';
 
 /**
+ * Pipeline error codes
+ */
+export type PipelineErrorCode =
+  | 'PIPELINE_INIT_FAILED'
+  | 'PIPELINE_FAILED'
+  | 'PIPELINE_INTERRUPTED'
+  | 'PIPELINE_TIMEOUT'
+  | 'AI_ANALYSIS_FAILED'
+  | 'AI_FIX_FAILED'
+  | 'INSTALL_DEPS_FAILED';
+
+/**
+ * Issue error codes
+ */
+export type IssueErrorCode =
+  | 'ISSUE_NOT_FOUND'
+  | 'NO_ISSUES_FOUND'
+  | 'ISSUE_UPDATE_FAILED'
+  | 'PR_EXISTS'
+  | 'PR_CREATE_FAILED';
+
+/**
  * Union of all error codes
  */
 export type ErrorCode =
@@ -86,7 +108,9 @@ export type ErrorCode =
   | AsanaErrorCode
   | WorktreeErrorCode
   | CheckErrorCode
-  | ParseErrorCode;
+  | ParseErrorCode
+  | PipelineErrorCode
+  | IssueErrorCode;
 
 /**
  * Error code category mapping
@@ -147,6 +171,22 @@ export const ERROR_CODE_CATEGORIES = {
     'PARSE_INVALID_YAML',
     'PARSE_INVALID_FORMAT',
     'PARSE_ENCODING_ERROR',
+  ] as const,
+  PIPELINE: [
+    'PIPELINE_INIT_FAILED',
+    'PIPELINE_FAILED',
+    'PIPELINE_INTERRUPTED',
+    'PIPELINE_TIMEOUT',
+    'AI_ANALYSIS_FAILED',
+    'AI_FIX_FAILED',
+    'INSTALL_DEPS_FAILED',
+  ] as const,
+  ISSUE: [
+    'ISSUE_NOT_FOUND',
+    'NO_ISSUES_FOUND',
+    'ISSUE_UPDATE_FAILED',
+    'PR_EXISTS',
+    'PR_CREATE_FAILED',
   ] as const,
 } as const;
 

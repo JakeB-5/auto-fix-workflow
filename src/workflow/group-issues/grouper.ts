@@ -53,6 +53,13 @@ export function groupByFile(issues: readonly Issue[]): IssueGroup[] {
     } else {
       // 주요 파일 (첫 번째)로 그룹화
       const primaryFile = files[0];
+      if (primaryFile === undefined) {
+        if (!groups.has('uncategorized')) {
+          groups.set('uncategorized', []);
+        }
+        groups.get('uncategorized')!.push(issue);
+        continue;
+      }
       const key = getFileKey(primaryFile);
 
       if (!groups.has(key)) {
@@ -87,6 +94,14 @@ export function groupByLabel(issues: readonly Issue[]): IssueGroup[] {
       // 주요 라벨 (첫 번째)로 그룹화
       const primaryLabel = issue.labels[0];
 
+      if (primaryLabel === undefined) {
+        if (!groups.has('uncategorized')) {
+          groups.set('uncategorized', []);
+        }
+        groups.get('uncategorized')!.push(issue);
+        continue;
+      }
+
       if (!groups.has(primaryLabel)) {
         groups.set(primaryLabel, []);
       }
@@ -112,12 +127,13 @@ function getFileKey(filePath: string): string {
   const parts = normalized.split('/');
 
   // 확장자 제거
-  const fileName = parts[parts.length - 1];
+  const fileName = parts[parts.length - 1] ?? '';
   const nameWithoutExt = fileName.replace(/\.[^.]+$/, '');
 
   // 디렉토리 구조 보존
   if (parts.length >= 2) {
-    return `${parts[parts.length - 2]}/${nameWithoutExt}`;
+    const dirPart = parts[parts.length - 2] ?? '';
+    return `${dirPart}/${nameWithoutExt}`;
   }
 
   return nameWithoutExt;

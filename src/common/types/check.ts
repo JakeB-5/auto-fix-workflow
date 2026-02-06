@@ -32,15 +32,15 @@ export interface SingleCheckResult {
   /** 체크 상태 */
   readonly status: CheckStatus;
   /** 표준 출력 */
-  readonly stdout?: string;
+  readonly stdout?: string | undefined;
   /** 표준 에러 */
-  readonly stderr?: string;
+  readonly stderr?: string | undefined;
   /** 실행 시간 (밀리초) */
   readonly durationMs: number;
   /** 종료 코드 */
-  readonly exitCode?: number;
+  readonly exitCode?: number | undefined;
   /** 에러 메시지 */
-  readonly error?: string;
+  readonly error?: string | undefined;
 }
 
 /**
@@ -68,9 +68,9 @@ export interface CheckResult {
   /** 현재 시도 횟수 (1-3) */
   readonly attempt: number;
   /** 최대 재시도 초과 여부 */
-  readonly maxRetriesExceeded?: boolean;
+  readonly maxRetriesExceeded?: boolean | undefined;
   /** 이전 시도 에러 목록 */
-  readonly previousErrors?: readonly PreviousError[];
+  readonly previousErrors?: readonly PreviousError[] | undefined;
   /** 총 실행 시간 (밀리초) */
   readonly totalDurationMs: number;
 }
@@ -136,9 +136,9 @@ export interface CheckError {
   /** 에러 메시지 */
   readonly message: string;
   /** 실패한 체크 유형 */
-  readonly check?: CheckType;
+  readonly check?: CheckType | undefined;
   /** 추가 컨텍스트 */
-  readonly context?: Record<string, unknown>;
+  readonly context?: Record<string, unknown> | undefined;
 }
 
 /**

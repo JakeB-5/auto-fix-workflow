@@ -11,7 +11,7 @@ import type { AsanaTask, TaskAnalysis } from './types.js';
  */
 interface TaskSelection {
   readonly task: AsanaTask;
-  readonly analysis?: TaskAnalysis;
+  readonly analysis?: TaskAnalysis | undefined;
   selected: boolean;
 }
 
@@ -62,6 +62,7 @@ export class InteractiveSelector {
       for (let i = 0; i < this.selections.length; i++) {
         this.currentIndex = i;
         const selection = this.selections[i];
+        if (selection === undefined) continue;
 
         this.printTask(selection, i + 1, this.selections.length);
 
@@ -77,14 +78,16 @@ export class InteractiveSelector {
           case 'all':
             // Select all remaining
             for (let j = i; j < this.selections.length; j++) {
-              this.selections[j].selected = true;
+              const s = this.selections[j];
+              if (s !== undefined) s.selected = true;
             }
             i = this.selections.length; // Exit loop
             break;
           case 'none':
             // Skip all remaining
             for (let j = i; j < this.selections.length; j++) {
-              this.selections[j].selected = false;
+              const s = this.selections[j];
+              if (s !== undefined) s.selected = false;
             }
             i = this.selections.length; // Exit loop
             break;

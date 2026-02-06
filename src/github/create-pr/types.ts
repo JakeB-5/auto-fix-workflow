@@ -20,9 +20,9 @@ export interface CreatePRParams {
   /** 타겟 브랜치 (base) */
   readonly base: string;
   /** Draft PR 여부 */
-  readonly draft?: boolean;
+  readonly draft?: boolean | undefined;
   /** 연결할 이슈 번호 목록 */
-  readonly issueNumbers?: readonly number[];
+  readonly issueNumbers?: readonly number[] | undefined;
 }
 
 /**

@@ -247,20 +247,27 @@ function extractAcceptanceCriteria(description: string): AcceptanceCriteria[] {
   const checklistRegex = /^\s*[-*]\s*\[([ x])\]\s*(.+)$/gm;
   let match;
   while ((match = checklistRegex.exec(description)) !== null) {
-    criteria.push({
-      description: match[2].trim(),
-      completed: match[1].toLowerCase() === 'x',
-    });
+    const descText = match[2];
+    const checkMark = match[1];
+    if (descText !== undefined && checkMark !== undefined) {
+      criteria.push({
+        description: descText.trim(),
+        completed: checkMark.toLowerCase() === 'x',
+      });
+    }
   }
 
   // Look for numbered list items
   if (criteria.length === 0) {
     const numberedRegex = /^\s*\d+\.\s+(.+)$/gm;
     while ((match = numberedRegex.exec(description)) !== null) {
-      criteria.push({
-        description: match[1].trim(),
-        completed: false,
-      });
+      const descText = match[1];
+      if (descText !== undefined) {
+        criteria.push({
+          description: descText.trim(),
+          completed: false,
+        });
+      }
     }
   }
 
@@ -314,8 +321,9 @@ function deriveComponent(
     const parts = file.path.split('/');
     if (parts.includes('src')) {
       const srcIndex = parts.indexOf('src');
-      if (parts[srcIndex + 1]) {
-        return parts[srcIndex + 1];
+      const componentPart = parts[srcIndex + 1];
+      if (componentPart !== undefined) {
+        return componentPart;
       }
     }
   }

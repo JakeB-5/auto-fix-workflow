@@ -11,9 +11,9 @@ import type { Serializer, Serializers } from './types.js';
 interface SerializedError {
   type: string;
   message: string;
-  stack?: string;
-  code?: string | number;
-  cause?: SerializedError;
+  stack?: string | undefined;
+  code?: string | number | undefined;
+  cause?: SerializedError | undefined;
 }
 
 /**

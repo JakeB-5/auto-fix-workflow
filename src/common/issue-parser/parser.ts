@@ -247,25 +247,28 @@ async function parseAllSections(
     body,
   };
 
+  // Build context object conditionally
+  const contextObj: ParsedIssue['context'] = {
+    priority: context.priority ?? DEFAULT_VALUES.priority,
+    relatedFiles: context.relatedFiles,
+    relatedSymbols: context.relatedSymbols,
+    ...(context.component !== undefined && { component: context.component }),
+    ...(context.service !== undefined && { service: context.service }),
+    ...(context.environment !== undefined && { environment: context.environment }),
+  };
+
   // Construct parsed issue
   const parsedIssue: ParsedIssue = {
     source: source.source,
-    sourceId: source.sourceId,
-    sourceUrl: source.sourceUrl,
     type,
     problemDescription,
-    context: {
-      component: context.component,
-      service: context.service,
-      environment: context.environment,
-      priority: context.priority ?? DEFAULT_VALUES.priority,
-      relatedFiles: context.relatedFiles,
-      relatedSymbols: context.relatedSymbols,
-    },
-    codeAnalysis: codeAnalysis ?? undefined,
-    suggestedFix: suggestedFix ?? undefined,
+    context: contextObj,
     acceptanceCriteria,
     rawSections,
+    ...(source.sourceId !== undefined && { sourceId: source.sourceId }),
+    ...(source.sourceUrl !== undefined && { sourceUrl: source.sourceUrl }),
+    ...(codeAnalysis !== undefined && codeAnalysis !== null && { codeAnalysis }),
+    ...(suggestedFix !== undefined && suggestedFix !== null && { suggestedFix }),
   };
 
   return ok(parsedIssue);

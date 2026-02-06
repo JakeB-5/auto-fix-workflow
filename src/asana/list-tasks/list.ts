@@ -33,15 +33,15 @@ export interface ListTasksOptions {
   /** Project GID to query */
   readonly projectGid: string;
   /** Section name to filter by (optional) */
-  readonly sectionName?: string;
+  readonly sectionName?: string | undefined;
   /** Section GID to filter by directly (optional, takes precedence over sectionName) */
-  readonly sectionGid?: string;
+  readonly sectionGid?: string | undefined;
   /** Include completed tasks (default: false) */
-  readonly includeCompleted?: boolean;
+  readonly includeCompleted?: boolean | undefined;
   /** Maximum number of tasks to return */
-  readonly limit?: number;
+  readonly limit?: number | undefined;
   /** Pagination offset token */
-  readonly offset?: string;
+  readonly offset?: string | undefined;
 }
 
 /** Task list query result */
@@ -104,15 +104,15 @@ export async function listTasks(
   };
 
   if (options.limit) {
-    queryParams.limit = options.limit;
+    queryParams['limit'] = options.limit;
   }
 
   if (options.offset) {
-    queryParams.offset = options.offset;
+    queryParams['offset'] = options.offset;
   }
 
   if (!options.includeCompleted) {
-    queryParams.completed_since = 'now'; // Only incomplete tasks
+    queryParams['completed_since'] = 'now'; // Only incomplete tasks
   }
 
   // Fetch tasks from section or project
@@ -183,36 +183,37 @@ function mapResponseToTasks(data: unknown[]): TaskListItem[] {
  */
 function mapTaskToItem(task: Record<string, unknown>): TaskListItem {
   const t = task;
+  const assigneeData = t['assignee'] as Record<string, string> | null;
 
   return {
-    gid: t.gid as string,
-    name: t.name as string,
-    completed: t.completed as boolean,
-    completedAt: (t.completed_at as string) ?? null,
-    createdAt: t.created_at as string,
-    modifiedAt: t.modified_at as string,
-    dueOn: (t.due_on as string) ?? null,
-    dueAt: (t.due_at as string) ?? null,
-    assignee: t.assignee
+    gid: t['gid'] as string,
+    name: t['name'] as string,
+    completed: t['completed'] as boolean,
+    completedAt: (t['completed_at'] as string) ?? null,
+    createdAt: t['created_at'] as string,
+    modifiedAt: t['modified_at'] as string,
+    dueOn: (t['due_on'] as string) ?? null,
+    dueAt: (t['due_at'] as string) ?? null,
+    assignee: assigneeData
       ? {
-          gid: (t.assignee as Record<string, string>).gid,
-          name: (t.assignee as Record<string, string>).name,
+          gid: assigneeData['gid'] ?? '',
+          name: assigneeData['name'] ?? '',
         }
       : null,
-    tags: Array.isArray(t.tags)
-      ? (t.tags as Array<{ gid: string; name: string }>).map((tag) => ({
+    tags: Array.isArray(t['tags'])
+      ? (t['tags'] as Array<{ gid: string; name: string }>).map((tag) => ({
           gid: tag.gid,
           name: tag.name,
         }))
       : [],
-    customFields: Array.isArray(t.custom_fields)
-      ? (t.custom_fields as Array<{ gid: string; name: string; display_value: string | null }>).map((cf) => ({
+    customFields: Array.isArray(t['custom_fields'])
+      ? (t['custom_fields'] as Array<{ gid: string; name: string; display_value: string | null }>).map((cf) => ({
           gid: cf.gid,
           name: cf.name,
           displayValue: cf.display_value,
         }))
       : [],
-    resourceSubtype: t.resource_subtype as string,
-    permalink: t.permalink_url as string,
+    resourceSubtype: t['resource_subtype'] as string,
+    permalink: t['permalink_url'] as string,
   };
 }

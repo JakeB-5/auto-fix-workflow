@@ -50,9 +50,9 @@ export interface FormattedTaskDetail {
   readonly customFields: readonly CustomFieldValue[];
   readonly url: string;
   readonly parentTask: { gid: string; name: string } | null;
-  readonly subtasks?: Array<{ gid: string; name: string; completed: boolean }>;
-  readonly comments?: readonly TaskStory[];
-  readonly attachments?: readonly TaskAttachment[];
+  readonly subtasks?: Array<{ gid: string; name: string; completed: boolean }> | undefined;
+  readonly comments?: readonly TaskStory[] | undefined;
+  readonly attachments?: readonly TaskAttachment[] | undefined;
 }
 
 /** Tool output type */

@@ -168,7 +168,8 @@ export async function runChecks(params: RunChecksParams): Promise<RunChecksResul
       if (error && typeof error === 'object' && 'previousErrors' in error) {
         const retryError = error as RetryError;
         previousErrors = retryError.previousErrors;
-        finalAttempt = previousErrors.length > 0 ? previousErrors[previousErrors.length - 1].attempt : MAX_RETRIES + 1;
+        const lastError = previousErrors.length > 0 ? previousErrors[previousErrors.length - 1] : undefined;
+        finalAttempt = lastError !== undefined ? lastError.attempt : MAX_RETRIES + 1;
         maxRetriesExceeded = true;
       } else {
         finalAttempt = currentAttempt || 1;

@@ -100,18 +100,28 @@ export function getEnvConfig(): LoggerEnvConfig {
 /**
  * Merge user options with defaults and environment config
  */
-export function resolveLoggerOptions(options?: LoggerOptions): Required<Omit<LoggerOptions, 'destination' | 'base'>> & Pick<LoggerOptions, 'destination' | 'base'> {
+export function resolveLoggerOptions(options?: LoggerOptions): Required<Omit<LoggerOptions, 'destination' | 'base'>> & { destination: LoggerOptions['destination']; base: LoggerOptions['base'] } {
   const envConfig = getEnvConfig();
 
-  return {
+  const result: Required<Omit<LoggerOptions, 'destination' | 'base'>> & { destination: LoggerOptions['destination']; base: LoggerOptions['base'] } = {
     level: options?.level ?? envConfig.level,
     name: options?.name ?? DEFAULT_LOGGER_OPTIONS.name,
     pretty: options?.pretty ?? envConfig.pretty,
     redact: options?.redact ?? envConfig.redact,
     redactPaths: options?.redactPaths ?? DEFAULT_LOGGER_OPTIONS.redactPaths,
-    destination: options?.destination,
-    base: options?.base,
+    destination: undefined,
+    base: undefined,
   };
+
+  if (options?.destination !== undefined) {
+    result.destination = options.destination;
+  }
+
+  if (options?.base !== undefined) {
+    result.base = options.base;
+  }
+
+  return result;
 }
 
 /**

@@ -65,15 +65,15 @@ export async function getTaskAttachments(
     for (const attachment of response.data) {
       const a = attachment as unknown as Record<string, unknown>;
       attachments.push({
-        gid: a.gid as string,
-        name: a.name as string,
-        resourceType: mapResourceType(a.resource_type as string),
-        createdAt: a.created_at as string,
-        downloadUrl: (a.download_url as string) ?? null,
-        permanentUrl: (a.permanent_url as string) ?? null,
-        viewUrl: (a.view_url as string) ?? null,
-        host: (a.host as string) ?? null,
-        size: (a.size as number) ?? null,
+        gid: a['gid'] as string,
+        name: a['name'] as string,
+        resourceType: mapResourceType(a['resource_type'] as string),
+        createdAt: a['created_at'] as string,
+        downloadUrl: (a['download_url'] as string) ?? null,
+        permanentUrl: (a['permanent_url'] as string) ?? null,
+        viewUrl: (a['view_url'] as string) ?? null,
+        host: (a['host'] as string) ?? null,
+        size: (a['size'] as number) ?? null,
       });
     }
   }

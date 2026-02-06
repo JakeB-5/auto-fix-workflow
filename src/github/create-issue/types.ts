@@ -16,11 +16,11 @@ export interface CreateIssueParams {
   /** Issue body content (Markdown) */
   readonly body: string;
   /** Labels to apply to the issue */
-  readonly labels?: readonly string[];
+  readonly labels?: readonly string[] | undefined;
   /** Assignees for the issue */
-  readonly assignees?: readonly string[];
+  readonly assignees?: readonly string[] | undefined;
   /** Milestone number */
-  readonly milestone?: number;
+  readonly milestone?: number | undefined;
 }
 
 /**
@@ -30,9 +30,9 @@ export interface GitHubApiError {
   /** Error message */
   readonly message: string;
   /** HTTP status code */
-  readonly status?: number;
+  readonly status?: number | undefined;
   /** Error code from GitHub API */
-  readonly code?: string;
+  readonly code?: string | undefined;
   /** Original error object */
-  readonly cause?: unknown;
+  readonly cause?: unknown | undefined;
 }

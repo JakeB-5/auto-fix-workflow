@@ -8,25 +8,25 @@ import type { TaskListItem } from './list.js';
 /** Filter criteria for tasks */
 export interface TaskFilterCriteria {
   /** Filter by tag names (any match) */
-  readonly tags?: readonly string[];
+  readonly tags?: readonly string[] | undefined;
   /** Exclude tasks with these tag names */
-  readonly excludeTags?: readonly string[];
+  readonly excludeTags?: readonly string[] | undefined;
   /** Filter by assignee GID */
-  readonly assigneeGid?: string;
+  readonly assigneeGid?: string | undefined;
   /** Filter unassigned tasks only */
-  readonly unassignedOnly?: boolean;
+  readonly unassignedOnly?: boolean | undefined;
   /** Filter by due date (tasks due on or before) */
-  readonly dueBefore?: Date;
+  readonly dueBefore?: Date | undefined;
   /** Filter by due date (tasks due on or after) */
-  readonly dueAfter?: Date;
+  readonly dueAfter?: Date | undefined;
   /** Filter overdue tasks only */
-  readonly overdueOnly?: boolean;
+  readonly overdueOnly?: boolean | undefined;
   /** Filter by custom field value (field name -> value) */
-  readonly customFields?: Record<string, string>;
+  readonly customFields?: Record<string, string> | undefined;
   /** Search in task name (case-insensitive) */
-  readonly nameContains?: string;
+  readonly nameContains?: string | undefined;
   /** Filter by resource subtype */
-  readonly resourceSubtype?: 'default_task' | 'milestone' | 'section' | 'approval';
+  readonly resourceSubtype?: 'default_task' | 'milestone' | 'section' | 'approval' | undefined;
 }
 
 /**

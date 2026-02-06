@@ -31,11 +31,11 @@ export interface TaskStory {
 /** Options for fetching stories */
 export interface GetStoriesOptions {
   /** Include system-generated stories (default: false) */
-  readonly includeSystem?: boolean;
+  readonly includeSystem?: boolean | undefined;
   /** Maximum stories to return */
-  readonly limit?: number;
+  readonly limit?: number | undefined;
   /** Convert HTML to Markdown (default: true) */
-  readonly convertToMarkdown?: boolean;
+  readonly convertToMarkdown?: boolean | undefined;
 }
 
 /** Fields to request from Asana API */
@@ -80,33 +80,34 @@ export async function getTaskStories(
       const s = story as Record<string, unknown>;
 
       // Skip system stories if not requested
-      const type = s.type as string;
+      const type = s['type'] as string;
       if (!includeSystem && type === 'system') {
         continue;
       }
 
-      const htmlText = (s.html_text as string) ?? null;
-      const text = (s.text as string) ?? '';
+      const htmlText = (s['html_text'] as string) ?? null;
+      const text = (s['text'] as string) ?? '';
+      const createdByData = s['created_by'] as Record<string, string> | null | undefined;
 
       stories.push({
-        gid: s.gid as string,
+        gid: s['gid'] as string,
         type: type === 'comment' ? 'comment' : 'system',
         text,
         htmlText,
         markdownText: convertToMarkdown && htmlText
           ? htmlToMarkdown(htmlText, { convertMentions: true })
           : text,
-        createdAt: s.created_at as string,
-        createdBy: s.created_by
+        createdAt: s['created_at'] as string,
+        createdBy: createdByData
           ? {
-              gid: (s.created_by as Record<string, string>).gid,
-              name: (s.created_by as Record<string, string>).name,
+              gid: createdByData['gid'] ?? '',
+              name: createdByData['name'] ?? '',
             }
           : null,
-        resourceSubtype: s.resource_subtype as string,
-        isPinned: (s.is_pinned as boolean) ?? false,
-        isEdited: (s.is_edited as boolean) ?? false,
-        numLikes: (s.num_likes as number) ?? 0,
+        resourceSubtype: s['resource_subtype'] as string,
+        isPinned: (s['is_pinned'] as boolean) ?? false,
+        isEdited: (s['is_edited'] as boolean) ?? false,
+        numLikes: (s['num_likes'] as number) ?? 0,
       });
 
       // Apply limit

@@ -136,59 +136,64 @@ export async function getTaskWithClient(
 function mapRawTask(task: Record<string, unknown>): RawTaskData {
   const t = task;
 
+  // Safely access assignee fields
+  const assigneeData = t['assignee'] as Record<string, string> | null;
+  const assigneeSectionData = t['assignee_section'] as Record<string, string> | null;
+  const parentData = t['parent'] as Record<string, string> | null;
+
   return {
-    gid: t.gid as string,
-    name: t.name as string,
-    notes: (t.notes as string) ?? '',
-    htmlNotes: (t.html_notes as string) ?? '',
-    completed: t.completed as boolean,
-    completedAt: (t.completed_at as string) ?? null,
-    createdAt: t.created_at as string,
-    modifiedAt: t.modified_at as string,
-    dueOn: (t.due_on as string) ?? null,
-    dueAt: (t.due_at as string) ?? null,
-    startOn: (t.start_on as string) ?? null,
-    startAt: (t.start_at as string) ?? null,
-    assignee: t.assignee
+    gid: t['gid'] as string,
+    name: t['name'] as string,
+    notes: (t['notes'] as string) ?? '',
+    htmlNotes: (t['html_notes'] as string) ?? '',
+    completed: t['completed'] as boolean,
+    completedAt: (t['completed_at'] as string) ?? null,
+    createdAt: t['created_at'] as string,
+    modifiedAt: t['modified_at'] as string,
+    dueOn: (t['due_on'] as string) ?? null,
+    dueAt: (t['due_at'] as string) ?? null,
+    startOn: (t['start_on'] as string) ?? null,
+    startAt: (t['start_at'] as string) ?? null,
+    assignee: assigneeData
       ? {
-          gid: (t.assignee as Record<string, string>).gid,
-          name: (t.assignee as Record<string, string>).name,
-          email: (t.assignee as Record<string, string>).email,
+          gid: assigneeData['gid'] ?? '',
+          name: assigneeData['name'] ?? '',
+          email: assigneeData['email'] ?? '',
         }
       : null,
-    assigneeSection: t.assignee_section
+    assigneeSection: assigneeSectionData
       ? {
-          gid: (t.assignee_section as Record<string, string>).gid,
-          name: (t.assignee_section as Record<string, string>).name,
+          gid: assigneeSectionData['gid'] ?? '',
+          name: assigneeSectionData['name'] ?? '',
         }
       : null,
-    followers: Array.isArray(t.followers)
-      ? (t.followers as Array<{ gid: string; name: string }>).map((f) => ({
+    followers: Array.isArray(t['followers'])
+      ? (t['followers'] as Array<{ gid: string; name: string }>).map((f) => ({
           gid: f.gid,
           name: f.name,
         }))
       : [],
-    parent: t.parent
+    parent: parentData
       ? {
-          gid: (t.parent as Record<string, string>).gid,
-          name: (t.parent as Record<string, string>).name,
+          gid: parentData['gid'] ?? '',
+          name: parentData['name'] ?? '',
         }
       : null,
-    projects: Array.isArray(t.projects)
-      ? (t.projects as Array<{ gid: string; name: string }>).map((p) => ({
+    projects: Array.isArray(t['projects'])
+      ? (t['projects'] as Array<{ gid: string; name: string }>).map((p) => ({
           gid: p.gid,
           name: p.name,
         }))
       : [],
-    tags: Array.isArray(t.tags)
-      ? (t.tags as Array<{ gid: string; name: string }>).map((tag) => ({
+    tags: Array.isArray(t['tags'])
+      ? (t['tags'] as Array<{ gid: string; name: string }>).map((tag) => ({
           gid: tag.gid,
           name: tag.name,
         }))
       : [],
-    memberships: Array.isArray(t.memberships)
+    memberships: Array.isArray(t['memberships'])
       ? (
-          t.memberships as Array<{
+          t['memberships'] as Array<{
             project: { gid: string; name: string };
             section: { gid: string; name: string } | null;
           }>
@@ -199,9 +204,9 @@ function mapRawTask(task: Record<string, unknown>): RawTaskData {
             : null,
         }))
       : [],
-    customFields: Array.isArray(t.custom_fields)
+    customFields: Array.isArray(t['custom_fields'])
       ? (
-          t.custom_fields as Array<{
+          t['custom_fields'] as Array<{
             gid: string;
             name: string;
             type: string;
@@ -222,11 +227,11 @@ function mapRawTask(task: Record<string, unknown>): RawTaskData {
           textValue: cf.text_value,
         }))
       : [],
-    resourceSubtype: t.resource_subtype as string,
-    permalink: t.permalink_url as string,
-    numSubtasks: (t.num_subtasks as number) ?? 0,
-    numLikes: (t.num_likes as number) ?? 0,
-    liked: (t.liked as boolean) ?? false,
+    resourceSubtype: t['resource_subtype'] as string,
+    permalink: t['permalink_url'] as string,
+    numSubtasks: (t['num_subtasks'] as number) ?? 0,
+    numLikes: (t['num_likes'] as number) ?? 0,
+    liked: (t['liked'] as boolean) ?? false,
   };
 }
 
@@ -253,9 +258,9 @@ export async function getSubtasks(
     for (const subtask of response.data) {
       const s = subtask as Record<string, unknown>;
       subtasks.push({
-        gid: s.gid as string,
-        name: s.name as string,
-        completed: s.completed as boolean,
+        gid: s['gid'] as string,
+        name: s['name'] as string,
+        completed: s['completed'] as boolean,
       });
     }
   }

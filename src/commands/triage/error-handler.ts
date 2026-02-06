@@ -34,17 +34,21 @@ export class TriageError extends Error {
     message: string,
     code: TriageErrorCode,
     options: {
-      retryable?: boolean;
-      cause?: Error;
-      context?: Record<string, unknown>;
+      retryable?: boolean | undefined;
+      cause?: Error | undefined;
+      context?: Record<string, unknown> | undefined;
     } = {}
   ) {
     super(message);
     this.name = 'TriageError';
     this.code = code;
     this.retryable = options.retryable ?? isRetryableCode(code);
-    this.context = options.context;
-    this.originalCause = options.cause;
+    if (options.context !== undefined) {
+      this.context = options.context;
+    }
+    if (options.cause !== undefined) {
+      this.originalCause = options.cause;
+    }
   }
 }
 
@@ -211,7 +215,16 @@ export function handleTriageError(error: unknown, context?: string): TriageError
 
   const contextMessage = context ? `${context}: ${message}` : message;
 
-  return new TriageError(contextMessage, code, { cause });
+  const options: {
+    retryable?: boolean | undefined;
+    cause?: Error | undefined;
+    context?: Record<string, unknown> | undefined;
+  } = {};
+  if (cause !== undefined) {
+    options.cause = cause;
+  }
+
+  return new TriageError(contextMessage, code, options);
 }
 
 /**

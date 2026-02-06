@@ -93,21 +93,21 @@ export interface AsanaTask {
   /** Task permalink URL */
   readonly permalinkUrl: string;
   /** Task due date (ISO string) */
-  readonly dueOn?: string;
+  readonly dueOn?: string | undefined;
   /** Task due datetime (ISO string) */
-  readonly dueAt?: string;
+  readonly dueAt?: string | undefined;
   /** Assignee information */
   readonly assignee?: {
     readonly gid: string;
     readonly name: string;
-    readonly email?: string;
-  };
+    readonly email?: string | undefined;
+  } | undefined;
   /** Custom fields */
-  readonly customFields?: readonly AsanaCustomField[];
+  readonly customFields?: readonly AsanaCustomField[] | undefined;
   /** Tags */
-  readonly tags?: readonly AsanaTag[];
+  readonly tags?: readonly AsanaTag[] | undefined;
   /** Project memberships */
-  readonly memberships?: readonly AsanaMembership[];
+  readonly memberships?: readonly AsanaMembership[] | undefined;
   /** Created at timestamp */
   readonly createdAt: string;
   /** Modified at timestamp */
@@ -122,14 +122,14 @@ export interface AsanaTask {
 export interface AsanaCustomField {
   readonly gid: string;
   readonly name: string;
-  readonly displayValue?: string;
+  readonly displayValue?: string | undefined;
   readonly type: 'text' | 'enum' | 'number' | 'date' | 'people';
   readonly enumValue?: {
     readonly gid: string;
     readonly name: string;
-  };
-  readonly textValue?: string;
-  readonly numberValue?: number;
+  } | undefined;
+  readonly textValue?: string | undefined;
+  readonly numberValue?: number | undefined;
 }
 
 /**
@@ -151,7 +151,7 @@ export interface AsanaMembership {
   readonly section?: {
     readonly gid: string;
     readonly name: string;
-  };
+  } | undefined;
 }
 
 /**
@@ -185,11 +185,11 @@ export interface GitHubIssueParams {
   /** Issue body (Markdown) */
   readonly body: string;
   /** Labels to apply */
-  readonly labels?: readonly string[];
+  readonly labels?: readonly string[] | undefined;
   /** Assignees (GitHub usernames) */
-  readonly assignees?: readonly string[];
+  readonly assignees?: readonly string[] | undefined;
   /** Milestone number */
-  readonly milestone?: number;
+  readonly milestone?: number | undefined;
 }
 
 /**
@@ -211,19 +211,19 @@ export interface AsanaTaskUpdateParams {
   /** Task GID */
   readonly taskGid: string;
   /** Project GID (required for section move) */
-  readonly projectGid?: string;
+  readonly projectGid?: string | undefined;
   /** New section GID */
-  readonly sectionGid?: string;
+  readonly sectionGid?: string | undefined;
   /** Tag GIDs to add */
-  readonly addTags?: readonly string[];
+  readonly addTags?: readonly string[] | undefined;
   /** Tag GIDs to remove */
-  readonly removeTags?: readonly string[];
+  readonly removeTags?: readonly string[] | undefined;
   /** Custom field updates */
-  readonly customFields?: Record<string, string | number | null>;
+  readonly customFields?: Record<string, string | number | null> | undefined;
   /** Notes to append (will be added as comment) */
-  readonly appendNotes?: string;
+  readonly appendNotes?: string | undefined;
   /** Mark as completed */
-  readonly completed?: boolean;
+  readonly completed?: boolean | undefined;
 }
 
 /**
@@ -231,7 +231,7 @@ export interface AsanaTaskUpdateParams {
  */
 export interface TriageConfig {
   /** Default Asana project GID */
-  readonly defaultProjectGid?: string;
+  readonly defaultProjectGid?: string | undefined;
   /** Default Asana section name for triage */
   readonly triageSectionName: string;
   /** Section name to move tasks after processing */

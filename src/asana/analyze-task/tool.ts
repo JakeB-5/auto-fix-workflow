@@ -150,23 +150,33 @@ export async function executeAnalyzeTask(
 
     // Generate Asana update
     const asanaComment = generateAsanaNotification(summaryMessage, recommendation);
-    const asanaUpdate = {
+    const sectionMove = determineSectionMove(analysisResult, confidence.level);
+    const asanaUpdate: AnalyzeTaskOutput['analysis']['asanaUpdate'] = {
       tag: determineAsanaTag(analysisResult, confidence.level),
       comment: asanaComment,
-      section: determineSectionMove(analysisResult, confidence.level),
+      ...(sectionMove !== undefined && { section: sectionMove }),
     };
 
+    // Build code context if available
+    const codeContextObj = codeContext !== undefined
+      ? {
+          files: [...codebaseContext.existingFiles.map(f => f.path)],
+          component: generateIssueContext(task, heuristics, codebaseContext).component,
+          functions: [...codebaseContext.foundSymbols.map(s => s.name)],
+        }
+      : undefined;
+
     // Build analysis response
-    const analysis = {
+    const analysis: AnalyzeTaskOutput['analysis'] = {
       analysisResult,
       confidence: confidence.overall,
       confidenceLevel: confidence.level,
       classification: heuristics.classification,
       complexity: heuristics.estimatedComplexity,
-      githubIssue,
-      codeContext,
       asanaUpdate,
       recommendations: summaryMessage.suggestions,
+      ...(githubIssue !== undefined && { githubIssue }),
+      ...(codeContextObj !== undefined && { codeContext: codeContextObj }),
     };
 
     // Format output

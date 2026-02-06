@@ -15,8 +15,8 @@ import { SECTION_NAMES, DEFAULT_VALUES } from './types.js';
  */
 export interface ParsedSource {
   readonly source: IssueSource;
-  readonly sourceId?: string;
-  readonly sourceUrl?: string;
+  readonly sourceId?: string | undefined;
+  readonly sourceUrl?: string | undefined;
 }
 
 /**

@@ -260,6 +260,9 @@ export function validateCommitMessage(message: string): boolean {
   }
 
   const header = lines[0];
+  if (header === undefined) {
+    return false;
+  }
 
   // Check header format: type(scope)?: subject
   const headerRegex = /^(fix|feat|refactor|docs|test|chore|style|perf)(\(.+\))?: .{1,72}$/;

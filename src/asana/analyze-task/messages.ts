@@ -37,18 +37,20 @@ export function generateFailureReasons(
 
   // Check confidence level
   if (confidence.level === 'very_low') {
+    const suggestion = confidence.suggestions[0];
     reasons.push({
       code: 'VERY_LOW_CONFIDENCE',
       message: 'Task definition is too vague for automated processing',
       severity: 'error',
-      suggestion: confidence.suggestions[0],
+      ...(suggestion !== undefined && { suggestion }),
     });
   } else if (confidence.level === 'low') {
+    const suggestion = confidence.suggestions[0];
     reasons.push({
       code: 'LOW_CONFIDENCE',
       message: 'Task may need additional clarification',
       severity: 'warning',
-      suggestion: confidence.suggestions[0],
+      ...(suggestion !== undefined && { suggestion }),
     });
   }
 

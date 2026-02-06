@@ -71,13 +71,13 @@ export function parseArgs(args: readonly string[]): Result<TriageOptions, Error>
     }
 
     // Long flags
-    if (arg.startsWith('--')) {
+    if (arg !== undefined && arg.startsWith('--')) {
       const flagName = arg.slice(2);
       const [key, inlineValue] = flagName.split('=');
       const definition = FLAG_DEFINITIONS.find((d) => d.long === key);
 
-      if (!definition) {
-        errors.push(`Unknown flag: --${key}`);
+      if (!definition || key === undefined) {
+        errors.push(`Unknown flag: --${key ?? 'unknown'}`);
         i++;
         continue;
       }
@@ -94,7 +94,7 @@ export function parseArgs(args: readonly string[]): Result<TriageOptions, Error>
       }
     }
     // Short flags
-    else if (arg.startsWith('-') && arg.length > 1) {
+    else if (arg !== undefined && arg.startsWith('-') && arg.length > 1) {
       const shortFlag = arg.slice(1);
 
       // Handle combined short flags like -dv
@@ -134,7 +134,7 @@ export function parseArgs(args: readonly string[]): Result<TriageOptions, Error>
       }
     }
     // Positional arguments (task GID for single mode)
-    else if (!options.projectId && isValidGid(arg)) {
+    else if (arg !== undefined && !options.projectId && isValidGid(arg)) {
       // First positional could be project or task
       options.projectId = arg;
     }

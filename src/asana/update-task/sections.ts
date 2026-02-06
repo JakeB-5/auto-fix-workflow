@@ -44,9 +44,9 @@ export async function moveTaskToSection(
     };
 
     if (insertBefore) {
-      requestData.insert_before = insertBefore;
+      requestData['insert_before'] = insertBefore;
     } else if (insertAfter) {
-      requestData.insert_after = insertAfter;
+      requestData['insert_after'] = insertAfter;
     }
 
     await client.sections.addTaskForSection(sectionGid, { data: requestData });
@@ -174,7 +174,7 @@ export async function getCurrentSection(
   });
 
   const t = response.data as Record<string, unknown>;
-  const memberships = t.memberships as Array<{
+  const memberships = t['memberships'] as Array<{
     project: { gid: string };
     section: { gid: string; name: string } | null;
   }> | undefined;

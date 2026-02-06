@@ -30,8 +30,9 @@ export function extractComponent(issue: Issue): string | null {
 
   if (componentLabel) {
     const parts = componentLabel.split(':');
-    if (parts.length === 2) {
-      return capitalize(parts[1]);
+    const componentPart = parts[1];
+    if (parts.length === 2 && componentPart !== undefined) {
+      return capitalize(componentPart);
     }
   }
 
@@ -44,8 +45,9 @@ export function extractComponent(issue: Issue): string | null {
   }
 
   // 4. relatedFiles 중 첫 번째 파일에서 추론
-  if (issue.context.relatedFiles.length > 0) {
-    const component = extractComponentFromPath(issue.context.relatedFiles[0]);
+  const firstRelatedFile = issue.context.relatedFiles[0];
+  if (firstRelatedFile !== undefined) {
+    const component = extractComponentFromPath(firstRelatedFile);
     if (component) {
       return component;
     }
@@ -76,16 +78,18 @@ function extractComponentFromPath(filePath: string): string | null {
   // components/Button/Button.tsx 형식
   if (parts.includes('components') && parts.length >= 3) {
     const idx = parts.indexOf('components');
-    if (idx + 1 < parts.length) {
-      return capitalize(parts[idx + 1]);
+    const componentPart = parts[idx + 1];
+    if (componentPart !== undefined) {
+      return capitalize(componentPart);
     }
   }
 
   // src/features/Auth/... 형식
   if (parts.includes('features') && parts.length >= 3) {
     const idx = parts.indexOf('features');
-    if (idx + 1 < parts.length) {
-      return capitalize(parts[idx + 1]);
+    const featurePart = parts[idx + 1];
+    if (featurePart !== undefined) {
+      return capitalize(featurePart);
     }
   }
 
@@ -123,13 +127,19 @@ function extractComponentFromBody(body: string): string | null {
   // Component: XXX 패턴
   const inlineMatch = body.match(/Component:\s*([A-Z][a-zA-Z0-9]*)/);
   if (inlineMatch) {
-    return inlineMatch[1];
+    const matchedComponent = inlineMatch[1];
+    if (matchedComponent !== undefined) {
+      return matchedComponent;
+    }
   }
 
   // ## Component 섹션
   const sectionMatch = body.match(/##\s*Component\s*\n\s*([A-Z][a-zA-Z0-9]*)/);
   if (sectionMatch) {
-    return sectionMatch[1];
+    const matchedSection = sectionMatch[1];
+    if (matchedSection !== undefined) {
+      return matchedSection;
+    }
   }
 
   return null;

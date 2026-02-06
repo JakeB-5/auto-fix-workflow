@@ -14,17 +14,17 @@ export interface UpdateIssueParams {
   /** Issue number to update */
   readonly issueNumber: number;
   /** New title for the issue */
-  readonly title?: string;
+  readonly title?: string | undefined;
   /** New body content for the issue */
-  readonly body?: string;
+  readonly body?: string | undefined;
   /** New state for the issue */
-  readonly state?: 'open' | 'closed';
+  readonly state?: 'open' | 'closed' | undefined;
   /** Labels to set on the issue */
-  readonly labels?: readonly string[];
+  readonly labels?: readonly string[] | undefined;
   /** Assignees to set on the issue */
-  readonly assignees?: readonly string[];
+  readonly assignees?: readonly string[] | undefined;
   /** Optional comment to add to the issue */
-  readonly addComment?: string;
+  readonly addComment?: string | undefined;
 }
 
 /**
@@ -34,9 +34,9 @@ export interface GitHubApiError {
   /** Error message */
   readonly message: string;
   /** HTTP status code */
-  readonly status?: number;
+  readonly status?: number | undefined;
   /** Error code from GitHub API */
-  readonly code?: string;
+  readonly code?: string | undefined;
   /** Original error object */
-  readonly cause?: unknown;
+  readonly cause?: unknown | undefined;
 }

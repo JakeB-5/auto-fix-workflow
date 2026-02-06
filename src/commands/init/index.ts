@@ -106,8 +106,8 @@ export async function init(args: readonly string[]): Promise<Result<InitResult, 
   // Get tokens based on mode
   if (options.nonInteractive) {
     // Non-interactive mode: read from environment variables
-    githubToken = process.env.GITHUB_TOKEN;
-    asanaToken = process.env.ASANA_TOKEN;
+    githubToken = process.env['GITHUB_TOKEN'];
+    asanaToken = process.env['ASANA_TOKEN'];
 
     if (!githubToken || !asanaToken) {
       return err(

@@ -13,6 +13,8 @@ import type {
   WorktreeErrorCode,
   CheckErrorCode,
   ParseErrorCode,
+  PipelineErrorCode,
+  IssueErrorCode,
 } from './codes.js';
 import { ERROR_CODE_CATEGORIES, getErrorCodeCategory } from './codes.js';
 
@@ -23,6 +25,8 @@ import type { AsanaApiError } from './asana-error.js';
 import type { WorktreeError } from './worktree-error.js';
 import type { CheckExecutionError } from './check-error.js';
 import type { ParseError } from './parse-error.js';
+import type { PipelineError } from './pipeline-error.js';
+import type { IssueError } from './issue-error.js';
 
 /**
  * Type guard for ConfigError
@@ -91,6 +95,28 @@ export function isParseError(error: unknown): error is ParseError {
 }
 
 /**
+ * Type guard for PipelineError
+ */
+export function isPipelineError(error: unknown): error is PipelineError {
+  return (
+    isAutofixError(error) &&
+    error.name === 'PipelineError' &&
+    isPipelineErrorCode(error.code)
+  );
+}
+
+/**
+ * Type guard for IssueError
+ */
+export function isIssueError(error: unknown): error is IssueError {
+  return (
+    isAutofixError(error) &&
+    error.name === 'IssueError' &&
+    isIssueErrorCode(error.code)
+  );
+}
+
+/**
  * Type guard for ConfigErrorCode
  */
 export function isConfigErrorCode(code: ErrorCode): code is ConfigErrorCode {
@@ -130,6 +156,20 @@ export function isCheckErrorCode(code: ErrorCode): code is CheckErrorCode {
  */
 export function isParseErrorCode(code: ErrorCode): code is ParseErrorCode {
   return (ERROR_CODE_CATEGORIES.PARSE as readonly string[]).includes(code);
+}
+
+/**
+ * Type guard for PipelineErrorCode
+ */
+export function isPipelineErrorCode(code: ErrorCode): code is PipelineErrorCode {
+  return (ERROR_CODE_CATEGORIES.PIPELINE as readonly string[]).includes(code);
+}
+
+/**
+ * Type guard for IssueErrorCode
+ */
+export function isIssueErrorCode(code: ErrorCode): code is IssueErrorCode {
+  return (ERROR_CODE_CATEGORIES.ISSUE as readonly string[]).includes(code);
 }
 
 /**

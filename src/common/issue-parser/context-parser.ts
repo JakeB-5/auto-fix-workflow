@@ -20,10 +20,10 @@ import { SECTION_NAMES, DEFAULT_VALUES } from './types.js';
  * Parsed context information
  */
 export interface ParsedContext {
-  readonly component?: string;
-  readonly service?: string;
-  readonly environment?: string;
-  readonly priority?: IssuePriority;
+  readonly component?: string | undefined;
+  readonly service?: string | undefined;
+  readonly environment?: string | undefined;
+  readonly priority?: IssuePriority | undefined;
   readonly relatedFiles: readonly string[];
   readonly relatedSymbols: readonly string[];
 }

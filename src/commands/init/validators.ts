@@ -11,8 +11,8 @@ import { ok, err } from '../../common/types/index.js';
  */
 export interface ValidationResult {
   valid: boolean;
-  username?: string;  // If validation succeeded, return username
-  error?: string;
+  username?: string | undefined;  // If validation succeeded, return username
+  error?: string | undefined;
 }
 
 /**

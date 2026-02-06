@@ -63,13 +63,13 @@ export function parseArgs(args: readonly string[]): Result<InitOptions, Error> {
     }
 
     // Long flags
-    if (arg.startsWith('--')) {
+    if (arg !== undefined && arg.startsWith('--')) {
       const flagName = arg.slice(2);
       const [key, inlineValue] = flagName.split('=');
       const definition = FLAG_DEFINITIONS.find((d) => d.long === key);
 
-      if (!definition) {
-        errors.push(`Unknown flag: --${key}`);
+      if (!definition || key === undefined) {
+        errors.push(`Unknown flag: --${key ?? 'unknown'}`);
         i++;
         continue;
       }
@@ -86,7 +86,7 @@ export function parseArgs(args: readonly string[]): Result<InitOptions, Error> {
       }
     }
     // Short flags
-    else if (arg.startsWith('-') && arg.length > 1) {
+    else if (arg !== undefined && arg.startsWith('-') && arg.length > 1) {
       const shortFlag = arg.slice(1);
 
       // Handle combined short flags like -nf

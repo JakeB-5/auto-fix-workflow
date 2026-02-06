@@ -28,13 +28,13 @@ export interface InitResult {
   /** Token configuration status */
   readonly tokensConfigured: TokenConfigStatus;
   /** Whether issue template was created */
-  readonly issueTemplateCreated?: boolean;
+  readonly issueTemplateCreated?: boolean | undefined;
   /** Whether PR template was created */
-  readonly prTemplateCreated?: boolean;
+  readonly prTemplateCreated?: boolean | undefined;
   /** Whether autofixing branch was created */
-  readonly autofixBranchCreated?: boolean;
+  readonly autofixBranchCreated?: boolean | undefined;
   /** GitHub labels creation result */
-  readonly labelsResult?: LabelsCreationStatus;
+  readonly labelsResult?: LabelsCreationStatus | undefined;
 }
 
 /**
@@ -64,9 +64,9 @@ export interface TokenConfigStatus {
  */
 export interface TokenConfig {
   /** GitHub personal access token */
-  readonly github?: string;
+  readonly github?: string | undefined;
   /** Asana personal access token */
-  readonly asana?: string;
+  readonly asana?: string | undefined;
 }
 
 /**
@@ -76,9 +76,9 @@ export interface TokenValidationResult {
   /** Whether the token is valid */
   readonly valid: boolean;
   /** Error message if validation failed */
-  readonly error?: string;
+  readonly error?: string | undefined;
   /** Additional information (e.g., username, permissions) */
-  readonly info?: Record<string, unknown>;
+  readonly info?: Record<string, unknown> | undefined;
 }
 
 /**

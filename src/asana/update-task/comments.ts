@@ -47,13 +47,13 @@ export async function addComment(
   if (options.isMarkdown) {
     // Convert Markdown to HTML
     const htmlText = markdownToHtml(options.text, { wrapInBody: true });
-    commentData.html_text = htmlText;
+    commentData['html_text'] = htmlText;
   } else {
-    commentData.text = options.text;
+    commentData['text'] = options.text;
   }
 
   if (options.isPinned) {
-    commentData.is_pinned = true;
+    commentData['is_pinned'] = true;
   }
 
   const response = await client.stories.createStoryForTask(options.taskGid, {
@@ -63,11 +63,11 @@ export async function addComment(
   const s = response.data as Record<string, unknown>;
 
   return {
-    gid: s.gid as string,
-    text: (s.text as string) ?? '',
-    htmlText: (s.html_text as string) ?? '',
-    createdAt: s.created_at as string,
-    isPinned: (s.is_pinned as boolean) ?? false,
+    gid: s['gid'] as string,
+    text: (s['text'] as string) ?? '',
+    htmlText: (s['html_text'] as string) ?? '',
+    createdAt: s['created_at'] as string,
+    isPinned: (s['is_pinned'] as boolean) ?? false,
   };
 }
 

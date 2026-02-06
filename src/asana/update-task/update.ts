@@ -17,39 +17,39 @@ export interface UpdateTaskOptions {
   /** Task GID to update */
   readonly taskGid: string;
   /** New task name */
-  readonly name?: string;
+  readonly name?: string | undefined;
   /** New task notes (plain text) */
-  readonly notes?: string;
+  readonly notes?: string | undefined;
   /** New task notes (Markdown, will be converted) */
-  readonly markdownNotes?: string;
+  readonly markdownNotes?: string | undefined;
   /** New task notes (HTML) */
-  readonly htmlNotes?: string;
+  readonly htmlNotes?: string | undefined;
   /** Set completed status */
-  readonly completed?: boolean;
+  readonly completed?: boolean | undefined;
   /** Set due date (YYYY-MM-DD) */
-  readonly dueOn?: string | null;
+  readonly dueOn?: string | null | undefined;
   /** Set due date/time (ISO 8601) */
-  readonly dueAt?: string | null;
+  readonly dueAt?: string | null | undefined;
   /** Set start date (YYYY-MM-DD) */
-  readonly startOn?: string | null;
+  readonly startOn?: string | null | undefined;
   /** Set assignee GID (null to unassign) */
-  readonly assigneeGid?: string | null;
+  readonly assigneeGid?: string | null | undefined;
   /** Tags to add (by name - will be created if needed) */
-  readonly addTags?: readonly string[];
+  readonly addTags?: readonly string[] | undefined;
   /** Tag GIDs to add */
-  readonly addTagGids?: readonly string[];
+  readonly addTagGids?: readonly string[] | undefined;
   /** Tags to remove (by name) */
-  readonly removeTags?: readonly string[];
+  readonly removeTags?: readonly string[] | undefined;
   /** Tag GIDs to remove */
-  readonly removeTagGids?: readonly string[];
+  readonly removeTagGids?: readonly string[] | undefined;
   /** Move to section (by name) */
-  readonly moveToSection?: string;
+  readonly moveToSection?: string | undefined;
   /** Project GID for section move */
-  readonly projectGid?: string;
+  readonly projectGid?: string | undefined;
   /** Comment to add */
-  readonly comment?: string;
+  readonly comment?: string | undefined;
   /** Comment is Markdown */
-  readonly commentIsMarkdown?: boolean;
+  readonly commentIsMarkdown?: boolean | undefined;
 }
 
 /** Task update result */
@@ -62,8 +62,8 @@ export interface UpdateTaskResult {
     readonly operation: 'add' | 'remove';
     readonly success: boolean;
   }[];
-  readonly sectionMove?: SectionMoveResult;
-  readonly comment?: CreatedComment;
+  readonly sectionMove?: SectionMoveResult | undefined;
+  readonly comment?: CreatedComment | undefined;
   readonly errors: readonly string[];
 }
 
@@ -91,49 +91,49 @@ export async function updateTask(
   const updateData: Record<string, unknown> = {};
 
   if (options.name !== undefined) {
-    updateData.name = options.name;
+    updateData['name'] = options.name;
     updatedFields.push('name');
   }
 
   if (options.notes !== undefined) {
-    updateData.notes = options.notes;
+    updateData['notes'] = options.notes;
     updatedFields.push('notes');
   }
 
   if (options.markdownNotes !== undefined) {
-    updateData.html_notes = markdownToHtml(options.markdownNotes, {
+    updateData['html_notes'] = markdownToHtml(options.markdownNotes, {
       wrapInBody: true,
     });
     updatedFields.push('html_notes');
   }
 
   if (options.htmlNotes !== undefined) {
-    updateData.html_notes = options.htmlNotes;
+    updateData['html_notes'] = options.htmlNotes;
     updatedFields.push('html_notes');
   }
 
   if (options.completed !== undefined) {
-    updateData.completed = options.completed;
+    updateData['completed'] = options.completed;
     updatedFields.push('completed');
   }
 
   if (options.dueOn !== undefined) {
-    updateData.due_on = options.dueOn;
+    updateData['due_on'] = options.dueOn;
     updatedFields.push('due_on');
   }
 
   if (options.dueAt !== undefined) {
-    updateData.due_at = options.dueAt;
+    updateData['due_at'] = options.dueAt;
     updatedFields.push('due_at');
   }
 
   if (options.startOn !== undefined) {
-    updateData.start_on = options.startOn;
+    updateData['start_on'] = options.startOn;
     updatedFields.push('start_on');
   }
 
   if (options.assigneeGid !== undefined) {
-    updateData.assignee = options.assigneeGid;
+    updateData['assignee'] = options.assigneeGid;
     updatedFields.push('assignee');
   }
 

@@ -14,11 +14,20 @@ import type {
   AIAnalysisResult,
   AIFixResult,
 } from './types.js';
-import { WorktreeTool } from './mcp-tools/worktree.js';
-import { RunChecksTool } from './mcp-tools/run-checks.js';
-import { CreatePRTool, type CreatePRConfig } from './mcp-tools/create-pr.js';
-import { UpdateIssueTool, type UpdateIssueConfig } from './mcp-tools/update-issue.js';
-import { AIIntegration } from './ai-integration.js';
+import {
+  WorktreeStage,
+  AnalysisStage,
+  FixStage,
+  CheckStage,
+  CommitStage,
+  PRStage,
+  createWorktreeStage,
+  createAnalysisStage,
+  createFixStage,
+  createCheckStage,
+  createCommitStage,
+  createPRStage,
+} from './pipeline/stages/index.js';
 
 /**
  * Pipeline error codes
@@ -54,51 +63,46 @@ export type PipelineEventHandler = (
 ) => void;
 
 /**
+ * Pipeline stages container
+ */
+export interface PipelineStages {
+  readonly worktree: WorktreeStage;
+  readonly analysis: AnalysisStage;
+  readonly fix: FixStage;
+  readonly check: CheckStage;
+  readonly commit: CommitStage;
+  readonly pr: PRStage;
+}
+
+/**
  * Processing Pipeline
  *
  * Handles the full processing flow for a single issue group
  */
 export class ProcessingPipeline {
-  private readonly worktreeTool: WorktreeTool;
-  private readonly checksTool: RunChecksTool;
-  private readonly prTool: CreatePRTool;
-  private readonly issueTool: UpdateIssueTool;
-  private readonly aiIntegration: AIIntegration;
+  private readonly stages: PipelineStages;
   private readonly pipelineConfig: PipelineConfig;
   private eventHandler?: PipelineEventHandler;
 
-  constructor(config: PipelineConfig) {
+  constructor(config: PipelineConfig, stages?: PipelineStages) {
     this.pipelineConfig = config;
 
-    this.worktreeTool = new WorktreeTool({
-      baseDir: config.config.worktree.baseDir,
-      prefix: config.config.worktree.prefix ?? 'autofix-',
-      repoPath: config.repoPath,
-    });
+    // Use provided stages or create default ones
+    this.stages = stages ?? this.createDefaultStages(config);
+  }
 
-    this.checksTool = new RunChecksTool(config.config.checks);
-
-    const prConfig: CreatePRConfig = {
-      token: config.config.github.token,
-      owner: config.config.github.owner,
-      repo: config.config.github.repo,
+  /**
+   * Create default stages from config
+   */
+  private createDefaultStages(config: PipelineConfig): PipelineStages {
+    return {
+      worktree: createWorktreeStage(config.config, config.repoPath, config.baseBranch),
+      analysis: createAnalysisStage(),
+      fix: createFixStage(),
+      check: createCheckStage(config.config.checks ?? {}),
+      commit: createCommitStage(),
+      pr: createPRStage(config.config, config.baseBranch),
     };
-    if (config.config.github.apiBaseUrl) {
-      (prConfig as { apiBaseUrl?: string }).apiBaseUrl = config.config.github.apiBaseUrl;
-    }
-    this.prTool = new CreatePRTool(prConfig);
-
-    const issueConfig: UpdateIssueConfig = {
-      token: config.config.github.token,
-      owner: config.config.github.owner,
-      repo: config.config.github.repo,
-    };
-    if (config.config.github.apiBaseUrl) {
-      (issueConfig as { apiBaseUrl?: string }).apiBaseUrl = config.config.github.apiBaseUrl;
-    }
-    this.issueTool = new UpdateIssueTool(issueConfig);
-
-    this.aiIntegration = new AIIntegration();
   }
 
   /**
@@ -126,7 +130,7 @@ export class ProcessingPipeline {
     try {
       // Stage 1: Create worktree
       await this.runStage(context, 'worktree_create', async () => {
-        const result = await this.createWorktree(context);
+        const result = await this.stages.worktree.execute(context);
         if (!isSuccess(result)) {
           throw new Error(result.error.message);
         }
@@ -135,7 +139,7 @@ export class ProcessingPipeline {
 
       // Stage 2: AI Analysis
       await this.runStage(context, 'ai_analysis', async () => {
-        const result = await this.analyzeGroup(context);
+        const result = await this.stages.analysis.execute(context);
         if (!isSuccess(result)) {
           throw new Error(result.error.message);
         }
@@ -144,18 +148,16 @@ export class ProcessingPipeline {
 
       // Stage 3: AI Fix
       await this.runStage(context, 'ai_fix', async () => {
-        const result = await this.applyFix(context);
+        const result = await this.stages.fix.execute(context, this.stages.worktree);
         if (!isSuccess(result)) {
           throw new Error(result.error.message);
         }
         context.fixResult = result.data;
 
         // Verify that files were actually modified
-        if (context.worktree) {
-          const hasChanges = await this.hasUncommittedChanges(context.worktree.path);
-          if (!hasChanges) {
-            throw new Error('AI reported success but no files were actually modified in the worktree');
-          }
+        const hasChanges = await this.stages.fix.verifyChanges(context, this.stages.worktree);
+        if (!hasChanges) {
+          throw new Error('AI reported success but no files were actually modified in the worktree');
         }
       });
 
@@ -164,60 +166,51 @@ export class ProcessingPipeline {
         if (!context.worktree) {
           throw new Error('No worktree available for dependency installation');
         }
-        await this.installDependencies(context.worktree.path);
+        const result = await this.stages.check.installDependencies(context.worktree.path);
+        if (!isSuccess(result)) {
+          throw new Error(result.error.message);
+        }
       });
 
       // Stage 5: Run Checks
       await this.runStage(context, 'checks', async () => {
-        const result = await this.runChecks(context);
+        const result = await this.stages.check.execute(context);
         if (!isSuccess(result)) {
           throw new Error(result.error.message);
         }
         context.checkResult = result.data;
 
         if (!result.data.passed) {
-          // Build detailed error message from failed checks
-          const failedChecks = result.data.results.filter(r => !r.passed);
-          const errorDetails = failedChecks.map(c => {
-            let detail = `[${c.check}] ${c.status}`;
-            if (c.error) {
-              detail += `: ${c.error}`;
-            }
-            // Include stderr or stdout for more context (truncated)
-            const output = c.stderr || c.stdout;
-            if (output) {
-              const truncated = output.slice(0, 500);
-              detail += `\n${truncated}${output.length > 500 ? '...(truncated)' : ''}`;
-            }
-            return detail;
-          }).join('\n\n');
-
+          const errorDetails = this.stages.check.formatCheckFailures(result.data);
           throw new Error(`Checks failed:\n${errorDetails}`);
         }
       });
 
-      // Stage 5: Commit changes
+      // Stage 6: Commit changes
       await this.runStage(context, 'commit', async () => {
-        await this.commitChanges(context);
+        const result = await this.stages.commit.execute(context, this.stages.worktree);
+        if (!isSuccess(result)) {
+          throw new Error(result.error.message);
+        }
       });
 
-      // Stage 6: Create PR
+      // Stage 7: Create PR
       await this.runStage(context, 'pr_create', async () => {
-        const result = await this.createPR(context);
+        const result = await this.stages.pr.execute(context);
         if (!isSuccess(result)) {
           throw new Error(result.error.message);
         }
         context.pr = result.data;
       });
 
-      // Stage 7: Update Issues
+      // Stage 8: Update Issues
       await this.runStage(context, 'issue_update', async () => {
-        await this.updateIssues(context);
+        await this.stages.pr.updateIssues(context);
       });
 
-      // Stage 8: Cleanup
+      // Stage 9: Cleanup
       await this.runStage(context, 'cleanup', async () => {
-        await this.cleanup(context);
+        await this.stages.worktree.cleanup(context, /* keepBranch */ true);
       });
 
       context.stage = 'done';
@@ -235,7 +228,7 @@ export class ProcessingPipeline {
 
       // Attempt cleanup
       try {
-        await this.cleanup(context);
+        await this.stages.worktree.cleanup(context, /* keepBranch */ false);
       } catch {
         // Ignore cleanup errors
       }
@@ -264,186 +257,6 @@ export class ProcessingPipeline {
     }
 
     await fn();
-  }
-
-  /**
-   * Create worktree for the group
-   */
-  private async createWorktree(context: PipelineContext) {
-    return this.worktreeTool.create({
-      branchName: context.group.branchName,
-      baseBranch: this.pipelineConfig.baseBranch,
-      issueNumbers: context.group.issues.map(i => i.number),
-    });
-  }
-
-  /**
-   * Analyze the group with AI
-   */
-  private async analyzeGroup(context: PipelineContext) {
-    if (!context.worktree) {
-      return err({ code: 'ANALYSIS_FAILED', message: 'No worktree available' });
-    }
-
-    return this.aiIntegration.analyzeGroup(context.group, context.worktree.path);
-  }
-
-  /**
-   * Apply fix with AI
-   */
-  private async applyFix(context: PipelineContext) {
-    if (!context.worktree || !context.analysisResult) {
-      return err({ code: 'FIX_FAILED', message: 'Missing prerequisites' });
-    }
-
-    return this.aiIntegration.applyFix(
-      context.group,
-      context.analysisResult,
-      context.worktree.path
-    );
-  }
-
-  /**
-   * Run checks in worktree
-   */
-  private async runChecks(context: PipelineContext) {
-    if (!context.worktree) {
-      return err({ code: 'CHECKS_FAILED', message: 'No worktree available' });
-    }
-
-    return this.checksTool.runChecks({
-      worktreePath: context.worktree.path,
-      checks: ['lint', 'typecheck', 'test'],
-      failFast: true,
-    });
-  }
-
-  /**
-   * Commit changes in worktree
-   */
-  private async commitChanges(context: PipelineContext): Promise<void> {
-    if (!context.worktree || !context.fixResult) {
-      throw new Error('Missing prerequisites for commit');
-    }
-
-    // Commit changes
-    const commitResult = await this.worktreeTool.execInWorktree(
-      context.worktree.path,
-      `commit -am "${context.fixResult.commitMessage.replace(/"/g, '\\"')}"`
-    );
-
-    if (!isSuccess(commitResult)) {
-      throw new Error(`Commit failed: ${commitResult.error.message}`);
-    }
-
-    // Push branch to remote (required for PR creation)
-    const pushResult = await this.worktreeTool.execInWorktree(
-      context.worktree.path,
-      `push -u origin ${context.worktree.branch}`
-    );
-
-    if (!isSuccess(pushResult)) {
-      throw new Error(`Push failed: ${pushResult.error.message}`);
-    }
-  }
-
-  /**
-   * Create PR for the group
-   */
-  private async createPR(context: PipelineContext) {
-    return this.prTool.createPRFromIssues(
-      context.group.issues,
-      context.group.branchName,
-      this.pipelineConfig.baseBranch
-    );
-  }
-
-  /**
-   * Update linked issues
-   */
-  private async updateIssues(context: PipelineContext): Promise<void> {
-    if (!context.pr) {
-      return;
-    }
-
-    for (const issue of context.group.issues) {
-      await this.issueTool.markFixed(
-        issue.number,
-        context.pr.number,
-        context.pr.url
-      );
-    }
-  }
-
-  /**
-   * Check for uncommitted changes in worktree
-   */
-  private async hasUncommittedChanges(worktreePath: string): Promise<boolean> {
-    const result = await this.worktreeTool.execInWorktree(worktreePath, 'status --porcelain');
-    if (!isSuccess(result)) {
-      return false;
-    }
-    return result.data.stdout.trim().length > 0;
-  }
-
-  /**
-   * Install dependencies in worktree
-   * Worktrees don't share node_modules, so we need to install dependencies
-   */
-  private async installDependencies(worktreePath: string): Promise<void> {
-    const fs = await import('fs');
-    const path = await import('path');
-
-
-    // Detect package manager based on lock file
-    let installCommand: string;
-    if (fs.existsSync(path.join(worktreePath, 'pnpm-lock.yaml'))) {
-      installCommand = 'pnpm install --frozen-lockfile';
-    } else if (fs.existsSync(path.join(worktreePath, 'yarn.lock'))) {
-      installCommand = 'yarn install --frozen-lockfile';
-    } else if (fs.existsSync(path.join(worktreePath, 'package-lock.json'))) {
-      installCommand = 'npm ci';
-    } else if (fs.existsSync(path.join(worktreePath, 'package.json'))) {
-      // Fallback to npm install if no lock file but package.json exists
-      installCommand = 'npm install';
-    } else {
-      // No package.json, skip dependency installation
-      return;
-    }
-
-
-    // Execute install command
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-    const execAsync = promisify(exec);
-
-    try {
-      const startTime = Date.now();
-      await execAsync(installCommand, {
-        cwd: worktreePath,
-        timeout: 5 * 60 * 1000, // 5 minute timeout for install
-        env: { ...process.env, CI: 'true' }, // CI mode for cleaner output
-      });
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to install dependencies: ${message}`);
-    }
-  }
-
-  /**
-   * Cleanup worktree
-   */
-  private async cleanup(context: PipelineContext): Promise<void> {
-    if (!context.worktree) {
-      return;
-    }
-
-    await this.worktreeTool.remove({
-      path: context.worktree.path,
-      force: true,
-      deleteBranch: context.stage !== 'done', // Keep branch if successful
-    });
   }
 
   /**
@@ -513,8 +326,8 @@ export class ProcessingPipeline {
 /**
  * Create processing pipeline
  */
-export function createPipeline(config: PipelineConfig): ProcessingPipeline {
-  return new ProcessingPipeline(config);
+export function createPipeline(config: PipelineConfig, stages?: PipelineStages): ProcessingPipeline {
+  return new ProcessingPipeline(config, stages);
 }
 
 /**

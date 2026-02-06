@@ -163,16 +163,16 @@ export async function handleGetIssue(params: GetIssueParams): Promise<{
  */
 function formatError(error: {
   message: string;
-  status?: number;
-  code?: string;
+  status?: number | undefined;
+  code?: string | undefined;
 }): string {
   const parts: string[] = [error.message];
 
-  if (error.status) {
+  if (error.status !== undefined) {
     parts.push(`(HTTP ${error.status})`);
   }
 
-  if (error.code) {
+  if (error.code !== undefined) {
     parts.push(`[${error.code}]`);
   }
 

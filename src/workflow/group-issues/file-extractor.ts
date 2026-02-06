@@ -60,8 +60,10 @@ function extractFilePathsFromBody(body: string): string[] {
     const match = body.match(regex);
     if (match) {
       const section = match[1];
-      const filePaths = parseFilePathsFromSection(section);
-      paths.push(...filePaths);
+      if (section !== undefined) {
+        const filePaths = parseFilePathsFromSection(section);
+        paths.push(...filePaths);
+      }
     }
   }
 
@@ -89,14 +91,20 @@ function parseFilePathsFromSection(section: string): string[] {
     // - 로 시작하는 리스트 항목
     const listMatch = line.match(/^[\s-]*`?([a-zA-Z0-9_\-./\\]+\.[a-zA-Z]+)`?/);
     if (listMatch) {
-      paths.push(listMatch[1]);
+      const matchedPath = listMatch[1];
+      if (matchedPath !== undefined) {
+        paths.push(matchedPath);
+      }
       continue;
     }
 
     // 일반 파일 경로 패턴
     const pathMatches = Array.from(line.matchAll(/([a-zA-Z0-9_\-./\\]+\.(ts|tsx|js|jsx|vue|svelte|py|java|go|rs))/g));
     for (const match of pathMatches) {
-      paths.push(match[1]);
+      const matchedPath = match[1];
+      if (matchedPath !== undefined) {
+        paths.push(matchedPath);
+      }
     }
   }
 
@@ -123,7 +131,10 @@ function extractPathsFromCodeBlocks(body: string): string[] {
     // 주석에서 파일 경로 찾기
     const commentMatches = Array.from(block.matchAll(/(?:\/\/|#)\s*([a-zA-Z0-9_\-./\\]+\.(ts|tsx|js|jsx|vue|svelte|py|java|go|rs))/g));
     for (const commentMatch of commentMatches) {
-      paths.push(commentMatch[1]);
+      const matchedPath = commentMatch[1];
+      if (matchedPath !== undefined) {
+        paths.push(matchedPath);
+      }
     }
   }
 

@@ -154,14 +154,21 @@ export function parseLLMResponse(response: string): Partial<LLMAnalysisResult> |
 
     const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
 
+    const classification = parsed['classification'];
+    const approach = parsed['approach'];
+    const risks = parsed['risks'];
+    const questions = parsed['questions'];
+    const effort = parsed['effort'];
+    const patterns = parsed['patterns'];
+
     return {
-      refinedClassification: parsed.classification as string | undefined,
-      implementationApproach: parsed.approach as string | undefined,
-      risks: parsed.risks as string[] | undefined,
-      clarificationQuestions: parsed.questions as string[] | undefined,
-      effortEstimate: parsed.effort as string | undefined,
-      relatedPatterns: parsed.patterns as string[] | undefined,
       rawResponse: response,
+      ...(typeof classification === 'string' && { refinedClassification: classification }),
+      ...(typeof approach === 'string' && { implementationApproach: approach }),
+      ...(Array.isArray(risks) && { risks: risks as string[] }),
+      ...(Array.isArray(questions) && { clarificationQuestions: questions as string[] }),
+      ...(typeof effort === 'string' && { effortEstimate: effort }),
+      ...(Array.isArray(patterns) && { relatedPatterns: patterns as string[] }),
     };
   } catch {
     return null;
@@ -181,12 +188,12 @@ export function createLLMResult(
 ): LLMAnalysisResult {
   return {
     performed: true,
-    refinedClassification: parsed.refinedClassification,
-    implementationApproach: parsed.implementationApproach,
     risks: parsed.risks ?? [],
     clarificationQuestions: parsed.clarificationQuestions ?? [],
-    effortEstimate: parsed.effortEstimate,
     relatedPatterns: parsed.relatedPatterns ?? [],
     rawResponse,
+    ...(parsed.refinedClassification !== undefined && { refinedClassification: parsed.refinedClassification }),
+    ...(parsed.implementationApproach !== undefined && { implementationApproach: parsed.implementationApproach }),
+    ...(parsed.effortEstimate !== undefined && { effortEstimate: parsed.effortEstimate }),
   };
 }

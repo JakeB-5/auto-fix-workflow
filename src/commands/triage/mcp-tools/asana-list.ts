@@ -15,15 +15,15 @@ export interface ListAsanaTasksParams {
   /** Project GID */
   readonly projectGid: string;
   /** Section GID (optional, filters by section) */
-  readonly sectionGid?: string;
+  readonly sectionGid?: string | undefined;
   /** Only incomplete tasks */
-  readonly completedSince?: string;
+  readonly completedSince?: string | undefined;
   /** Modified since (ISO date) */
-  readonly modifiedSince?: string;
+  readonly modifiedSince?: string | undefined;
   /** Maximum results */
-  readonly limit?: number;
+  readonly limit?: number | undefined;
   /** Fields to include */
-  readonly optFields?: readonly string[];
+  readonly optFields?: readonly string[] | undefined;
 }
 
 /**
@@ -82,19 +82,19 @@ export class AsanaListTool {
       };
 
       if (params.sectionGid) {
-        toolParams.section = params.sectionGid;
+        toolParams['section'] = params.sectionGid;
       }
 
       if (params.completedSince) {
-        toolParams.completed_since = params.completedSince;
+        toolParams['completed_since'] = params.completedSince;
       }
 
       if (params.modifiedSince) {
-        toolParams.modified_since = params.modifiedSince;
+        toolParams['modified_since'] = params.modifiedSince;
       }
 
       if (params.limit) {
-        toolParams.limit = params.limit;
+        toolParams['limit'] = params.limit;
       }
 
       const result = await this.client.callTool({
@@ -246,50 +246,51 @@ export class AsanaListTool {
 
   private mapToAsanaTask(raw: Record<string, unknown>): AsanaTask {
     return {
-      gid: String(raw.gid ?? ''),
-      name: String(raw.name ?? ''),
-      notes: String(raw.notes ?? ''),
-      permalinkUrl: String(raw.permalink_url ?? ''),
-      dueOn: raw.due_on ? String(raw.due_on) : undefined,
-      dueAt: raw.due_at ? String(raw.due_at) : undefined,
-      assignee: raw.assignee ? this.mapAssignee(raw.assignee as Record<string, unknown>) : undefined,
-      customFields: raw.custom_fields
-        ? this.mapCustomFields(raw.custom_fields as unknown[])
+      gid: String(raw['gid'] ?? ''),
+      name: String(raw['name'] ?? ''),
+      notes: String(raw['notes'] ?? ''),
+      permalinkUrl: String(raw['permalink_url'] ?? ''),
+      dueOn: raw['due_on'] ? String(raw['due_on']) : undefined,
+      dueAt: raw['due_at'] ? String(raw['due_at']) : undefined,
+      assignee: raw['assignee'] ? this.mapAssignee(raw['assignee'] as Record<string, unknown>) : undefined,
+      customFields: raw['custom_fields']
+        ? this.mapCustomFields(raw['custom_fields'] as unknown[])
         : undefined,
-      tags: raw.tags ? this.mapTags(raw.tags as unknown[]) : undefined,
-      memberships: raw.memberships
-        ? this.mapMemberships(raw.memberships as unknown[])
+      tags: raw['tags'] ? this.mapTags(raw['tags'] as unknown[]) : undefined,
+      memberships: raw['memberships']
+        ? this.mapMemberships(raw['memberships'] as unknown[])
         : undefined,
-      createdAt: String(raw.created_at ?? new Date().toISOString()),
-      modifiedAt: String(raw.modified_at ?? new Date().toISOString()),
-      completed: Boolean(raw.completed),
+      createdAt: String(raw['created_at'] ?? new Date().toISOString()),
+      modifiedAt: String(raw['modified_at'] ?? new Date().toISOString()),
+      completed: Boolean(raw['completed']),
     };
   }
 
   private mapAssignee(raw: Record<string, unknown>): AsanaTask['assignee'] {
     return {
-      gid: String(raw.gid ?? ''),
-      name: String(raw.name ?? ''),
-      email: raw.email ? String(raw.email) : undefined,
+      gid: String(raw['gid'] ?? ''),
+      name: String(raw['name'] ?? ''),
+      email: raw['email'] ? String(raw['email']) : undefined,
     };
   }
 
   private mapCustomFields(raw: unknown[]): AsanaCustomField[] {
     return raw.map((field) => {
       const f = field as Record<string, unknown>;
+      const enumVal = f['enum_value'] as Record<string, unknown> | undefined;
       return {
-        gid: String(f.gid ?? ''),
-        name: String(f.name ?? ''),
-        displayValue: f.display_value ? String(f.display_value) : undefined,
-        type: (f.type as AsanaCustomField['type']) ?? 'text',
-        enumValue: f.enum_value
+        gid: String(f['gid'] ?? ''),
+        name: String(f['name'] ?? ''),
+        displayValue: f['display_value'] ? String(f['display_value']) : undefined,
+        type: (f['type'] as AsanaCustomField['type']) ?? 'text',
+        enumValue: enumVal
           ? {
-              gid: String((f.enum_value as Record<string, unknown>).gid ?? ''),
-              name: String((f.enum_value as Record<string, unknown>).name ?? ''),
+              gid: String(enumVal['gid'] ?? ''),
+              name: String(enumVal['name'] ?? ''),
             }
           : undefined,
-        textValue: f.text_value ? String(f.text_value) : undefined,
-        numberValue: f.number_value !== undefined ? Number(f.number_value) : undefined,
+        textValue: f['text_value'] ? String(f['text_value']) : undefined,
+        numberValue: f['number_value'] !== undefined ? Number(f['number_value']) : undefined,
       };
     });
   }
@@ -298,8 +299,8 @@ export class AsanaListTool {
     return raw.map((tag) => {
       const t = tag as Record<string, unknown>;
       return {
-        gid: String(t.gid ?? ''),
-        name: String(t.name ?? ''),
+        gid: String(t['gid'] ?? ''),
+        name: String(t['name'] ?? ''),
       };
     });
   }
@@ -307,17 +308,17 @@ export class AsanaListTool {
   private mapMemberships(raw: unknown[]): AsanaMembership[] {
     return raw.map((membership) => {
       const m = membership as Record<string, unknown>;
-      const project = m.project as Record<string, unknown> | undefined;
-      const section = m.section as Record<string, unknown> | undefined;
+      const project = m['project'] as Record<string, unknown> | undefined;
+      const section = m['section'] as Record<string, unknown> | undefined;
       return {
         project: {
-          gid: String(project?.gid ?? ''),
-          name: String(project?.name ?? ''),
+          gid: String(project?.['gid'] ?? ''),
+          name: String(project?.['name'] ?? ''),
         },
         section: section
           ? {
-              gid: String(section.gid ?? ''),
-              name: String(section.name ?? ''),
+              gid: String(section['gid'] ?? ''),
+              name: String(section['name'] ?? ''),
             }
           : undefined,
       };

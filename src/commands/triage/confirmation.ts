@@ -53,6 +53,7 @@ export async function confirmBatchWork(context: ConfirmationContext): Promise<Co
 
     for (let i = 0; i < displayCount; i++) {
       const task = tasks[i];
+      if (task === undefined) continue;
       const analysis = analyses?.get(task.gid);
       const priority = analysis?.priority ?? 'unknown';
       const type = analysis?.issueType ?? 'unknown';

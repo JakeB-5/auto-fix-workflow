@@ -27,7 +27,7 @@ export async function hasGitignoreEntry(
 
     // 정확한 일치 또는 주석 없이 일치하는 항목 확인
     return lines.some((line) => {
-      const trimmedLine = line.split('#')[0].trim();
+      const trimmedLine = line.split('#')[0]?.trim() ?? '';
       return trimmedLine === entry;
     });
   } catch (error) {

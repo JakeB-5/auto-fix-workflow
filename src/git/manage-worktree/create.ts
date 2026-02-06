@@ -111,7 +111,7 @@ export async function createWorktree(
       issueNumbers: params.issueNumbers,
       createdAt: now,
       lastActivityAt: now,
-      headCommit,
+      headCommit: headCommit ?? '',
     };
 
     return ok(worktreeInfo);

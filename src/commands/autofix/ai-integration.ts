@@ -3,7 +3,6 @@
  * @description Claude AI analysis and fix integration via Claude CLI
  */
 
-import { spawn } from 'child_process';
 import type { Issue, IssueGroup } from '../../common/types/index.js';
 import type { Result } from '../../common/types/result.js';
 import { ok, err, isFailure } from '../../common/types/result.js';
@@ -12,321 +11,28 @@ import { buildAnalysisPrompt, buildFixPrompt } from './prompts.js';
 import { createBudgetTrackerFromAI, type BudgetTracker } from './budget.js';
 import type { AsanaTask, TaskAnalysis } from '../triage/types.js';
 
-/**
- * AI integration error
- */
-export interface AIError {
-  readonly code: AIErrorCode;
-  readonly message: string;
-  readonly cause?: Error;
-}
+// Re-export types and functions from claude-cli for backward compatibility
+export type {
+  AIError,
+  AIErrorCode,
+  AIConfig,
+  ClaudeOptions,
+  ClaudeResult,
+} from './claude-cli/index.js';
 
-export type AIErrorCode =
-  | 'ANALYSIS_FAILED'
-  | 'FIX_FAILED'
-  | 'CONTEXT_TOO_LARGE'
-  | 'API_ERROR'
-  | 'CLI_NOT_FOUND'
-  | 'TIMEOUT'
-  | 'RATE_LIMIT'
-  | 'BUDGET_EXCEEDED'
-  | 'PARSE_ERROR'
-  | 'NOT_IMPLEMENTED';
+export {
+  invokeClaudeCLI,
+  safeInvokeClaude,
+} from './claude-cli/index.js';
 
-/**
- * AI integration configuration
- */
-export interface AIConfig {
-  readonly apiKey?: string;
-  readonly model?: string;
-  readonly maxTokens?: number;
-  readonly temperature?: number;
-  readonly maxBudgetPerIssue?: number;
-  readonly maxBudgetPerSession?: number;
-  readonly preferredModel?: 'opus' | 'sonnet' | 'haiku';
-  readonly fallbackModel?: 'opus' | 'sonnet' | 'haiku';
-}
-
-/**
- * Claude CLI invocation options
- */
-export interface ClaudeOptions {
-  /** Prompt to send to Claude */
-  prompt: string;
-  /** Model to use */
-  model?: 'opus' | 'sonnet' | 'haiku';
-  /** Allowed tools */
-  allowedTools?: string[];
-  /** Maximum budget in USD */
-  maxBudget?: number;
-  /** Working directory */
-  workingDir?: string;
-  /** Timeout in milliseconds */
-  timeout?: number;
-  /** Stream output to stderr in real-time (default: true) */
-  streamOutput?: boolean;
-}
-
-/**
- * Claude CLI result
- */
-export interface ClaudeResult {
-  /** Success flag */
-  success: boolean;
-  /** stdout output */
-  output: string;
-  /** Exit code */
-  exitCode: number;
-  /** Usage information if available */
-  usage?: {
-    inputTokens: number;
-    outputTokens: number;
-    cost: number;
-  };
-  /** stderr output */
-  error?: string;
-}
-
-/**
- * Sleep utility for retry backoff
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Invoke Claude CLI as subprocess
- */
-export async function invokeClaudeCLI(options: ClaudeOptions): Promise<Result<ClaudeResult, AIError>> {
-  const {
-    prompt,
-    model = 'opus',
-    allowedTools = [],
-    maxBudget,
-    workingDir,
-    timeout = 120000, // 2 minutes default
-    streamOutput = true, // Default to streaming
-  } = options;
-
-  // Build command string with all arguments
-  // Use stream-json for real-time output visibility
-  const cmdParts: string[] = [
-    'claude',
-    '--dangerously-skip-permissions',
-    '--print',
-    '--output-format', streamOutput ? 'stream-json' : 'json',
-  ];
-
-  // --verbose is required when using --print with --output-format=stream-json
-  if (streamOutput) {
-    cmdParts.push('--verbose');
-  }
-
-  if (model) {
-    cmdParts.push('--model', model);
-  }
-
-  if (allowedTools.length > 0) {
-    // Use comma-separated format for reliability
-    cmdParts.push('--allowedTools', allowedTools.join(','));
-  }
-
-  if (maxBudget !== undefined) {
-    cmdParts.push('--max-budget-usd', maxBudget.toString());
-  }
-
-  // Build complete command string (prompt will be piped via stdin)
-  const commandStr = cmdParts.join(' ');
-
-  return new Promise((resolve) => {
-    // Use shell: true with command as string (no args array) to avoid DEP0190 warning
-    // The prompt is piped through stdin to avoid EINVAL errors with special characters
-    const claude = spawn(commandStr, [], {
-      cwd: workingDir || process.cwd(),
-      env: { ...process.env },
-      shell: true,
-      // On Windows, hide the console window
-      windowsHide: true,
-    });
-
-    // Write prompt to stdin and close it
-    // This avoids command-line argument issues with special characters (Korean, etc.)
-    if (claude.stdin) {
-      claude.stdin.write(prompt);
-      claude.stdin.end();
-    }
-
-    let stdout = '';
-    let stderr = '';
-    let timedOut = false;
-    let finalResult = ''; // Accumulate the final result text
-
-    // Setup timeout
-    const timeoutHandle = setTimeout(() => {
-      timedOut = true;
-      claude.kill('SIGTERM');
-    }, timeout);
-
-    claude.stdout?.on('data', (data) => {
-      const chunk = data.toString();
-      stdout += chunk;
-
-      // Parse stream-json format and display in real-time
-      if (streamOutput) {
-        // Each line in stream-json is a JSON object
-        const lines = chunk.split('\n').filter((line: string) => line.trim());
-        for (const line of lines) {
-          try {
-            const event = JSON.parse(line);
-            // Handle different event types from Claude CLI stream-json
-            if (event.type === 'assistant' && event.message?.content) {
-              // Assistant message with content blocks
-              for (const block of event.message.content) {
-                if (block.type === 'text' && block.text) {
-                  process.stderr.write(block.text);
-                  finalResult += block.text;
-                }
-              }
-            } else if (event.type === 'content_block_delta' && event.delta?.text) {
-              // Streaming text delta
-              process.stderr.write(event.delta.text);
-              finalResult += event.delta.text;
-            } else if (event.type === 'result' && event.result) {
-              // Final result
-              finalResult = event.result;
-            }
-          } catch {
-            // Not valid JSON, ignore (might be partial line)
-          }
-        }
-      }
-    });
-
-    claude.stderr?.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    claude.on('close', (code) => {
-      clearTimeout(timeoutHandle);
-
-      // Add newline after streaming output
-      if (streamOutput && finalResult) {
-        process.stderr.write('\n');
-      }
-
-      if (timedOut) {
-        resolve(err({
-          code: 'TIMEOUT',
-          message: `Claude CLI timed out after ${timeout}ms`,
-        }));
-        return;
-      }
-
-      const exitCode = code ?? 1;
-      // Use finalResult for stream mode, raw stdout for json mode
-      const outputText = streamOutput ? finalResult : stdout;
-      const result: ClaudeResult = {
-        success: exitCode === 0,
-        output: outputText || stdout,
-        exitCode,
-        error: stderr || undefined,
-      };
-
-      // Try to parse usage information from JSON output
-      try {
-        const jsonMatch = stdout.match(/\{[\s\S]*"usage"[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.usage) {
-            result.usage = {
-              inputTokens: parsed.usage.input_tokens ?? 0,
-              outputTokens: parsed.usage.output_tokens ?? 0,
-              cost: parsed.usage.cost_usd ?? 0,
-            };
-          }
-        }
-      } catch {
-        // Ignore parse errors for usage info
-      }
-
-      resolve(ok(result));
-    });
-
-    claude.on('error', (error) => {
-      clearTimeout(timeoutHandle);
-
-      // Check if command not found
-      if ('code' in error && error.code === 'ENOENT') {
-        resolve(err({
-          code: 'CLI_NOT_FOUND',
-          message: 'Claude CLI not found. Please install it first.',
-          cause: error,
-        }));
-        return;
-      }
-
-      resolve(err({
-        code: 'API_ERROR',
-        message: `Failed to spawn Claude CLI: ${error.message}`,
-        cause: error,
-      }));
-    });
-  });
-}
-
-/**
- * Invoke Claude with retry logic
- */
-async function safeInvokeClaude(
-  options: ClaudeOptions,
-  maxRetries = 3
-): Promise<Result<ClaudeResult, AIError>> {
-  let lastError: AIError | undefined;
-
-  for (let i = 0; i < maxRetries; i++) {
-    const result = await invokeClaudeCLI(options);
-
-    if (result.success) {
-      if (result.data.success) {
-        return result;
-      }
-
-      // Check for rate limit or overload
-      const errorMsg = result.data.error?.toLowerCase() || '';
-      if (errorMsg.includes('overloaded') || errorMsg.includes('rate') || errorMsg.includes('limit')) {
-        // Exponential backoff: 1s, 2s, 4s
-        await sleep(Math.pow(2, i) * 1000);
-        continue;
-      }
-
-      // Other failure, return immediately
-      return err({
-        code: 'API_ERROR',
-        message: result.data.error || 'Claude CLI failed',
-      });
-    } else if (isFailure(result)) {
-      // If we reach here, result.success is false
-      // Handle known error codes
-      if (result.error.code === 'CLI_NOT_FOUND') {
-        return result; // Don't retry if CLI not found
-      }
-
-      if (result.error.code === 'TIMEOUT') {
-        return result; // Don't retry on timeout
-      }
-
-      lastError = result.error;
-      await sleep(1000); // Brief pause before retry
-    }
-  }
-
-  return err(
-    lastError || {
-      code: 'API_ERROR',
-      message: 'Max retries exceeded',
-    }
-  );
-}
+// Import for internal use
+import type { AIConfig, AIError } from './claude-cli/index.js';
+import {
+  safeInvokeClaude,
+  parseAnalysisResult,
+  parseFixResult,
+  parseTaskAnalysisResult,
+} from './claude-cli/index.js';
 
 /**
  * AI Integration Service
@@ -389,39 +95,22 @@ export class AIIntegration {
     }
 
     // Parse JSON response
-    try {
-      // Extract JSON from output
-      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"confidence"[\s\S]*?\}/);
-      if (!jsonMatch) {
-        return err({
-          code: 'PARSE_ERROR',
-          message: 'Could not find JSON in Claude output',
-        });
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]) as {
-        confidence: number;
-        rootCause: string;
-        suggestedFix: string;
-        affectedFiles: string[];
-        complexity: 'low' | 'medium' | 'high';
-      };
-
-      return ok({
-        issues: group.issues,
-        filesToModify: parsed.affectedFiles,
-        rootCause: parsed.rootCause,
-        suggestedFix: parsed.suggestedFix,
-        confidence: parsed.confidence,
-        complexity: parsed.complexity,
-      });
-    } catch (error) {
+    const parsed = parseAnalysisResult(claudeResult.output);
+    if (!parsed) {
       return err({
         code: 'PARSE_ERROR',
-        message: `Failed to parse analysis result: ${error instanceof Error ? error.message : String(error)}`,
-        cause: error instanceof Error ? error : undefined,
+        message: 'Could not find JSON in Claude output',
       });
     }
+
+    return ok({
+      issues: group.issues,
+      filesToModify: parsed.affectedFiles,
+      rootCause: parsed.rootCause,
+      suggestedFix: parsed.suggestedFix,
+      confidence: parsed.confidence,
+      complexity: parsed.complexity,
+    });
   }
 
   /**
@@ -472,41 +161,20 @@ export class AIIntegration {
     }
 
     // Parse JSON response
-    try {
-      // Extract JSON from output
-      const jsonMatch = claudeResult.output.match(/\{[\s\S]*?"success"[\s\S]*?\}/);
-      if (!jsonMatch) {
-        return err({
-          code: 'PARSE_ERROR',
-          message: 'Could not find JSON in Claude output',
-        });
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]) as {
-        success: boolean;
-        summary: string;
-        filesChanged: string[];
-      };
-
-      // If successful, stage files
-      if (parsed.success && parsed.filesChanged.length > 0) {
-        // Files should already be staged by Claude using Bash tool
-        // But we can verify or re-stage if needed
-      }
-
-      return ok({
-        filesModified: parsed.filesChanged,
-        summary: parsed.summary,
-        success: parsed.success,
-        commitMessage: this.generateCommitMessage(group),
-      });
-    } catch (error) {
+    const parsed = parseFixResult(claudeResult.output);
+    if (!parsed) {
       return err({
         code: 'PARSE_ERROR',
-        message: `Failed to parse fix result: ${error instanceof Error ? error.message : String(error)}`,
-        cause: error instanceof Error ? error : undefined,
+        message: 'Could not find JSON in Claude output',
       });
     }
+
+    return ok({
+      filesModified: parsed.filesChanged,
+      summary: parsed.summary,
+      success: parsed.success,
+      commitMessage: this.generateCommitMessage(group),
+    });
   }
 
   /**
@@ -560,7 +228,9 @@ export class AIIntegration {
     if (isFailure(result)) {
       // Fallback to heuristic analysis
       if (process.env['DEBUG']) {
-        process.stderr.write(`[DEBUG] Claude CLI failed: ${result.error.code} - ${result.error.message}\n`);
+        process.stderr.write(
+          `[DEBUG] Claude CLI failed: ${result.error.code} - ${result.error.message}\n`
+        );
       }
       return ok(this.getFallbackTaskAnalysis(task));
     }
@@ -574,45 +244,23 @@ export class AIIntegration {
 
     // Debug: log raw output
     if (process.env['DEBUG']) {
-      process.stderr.write(`[DEBUG] Claude raw output (first 500 chars):\n${claudeResult.output.slice(0, 500)}\n`);
+      process.stderr.write(
+        `[DEBUG] Claude raw output (first 500 chars):\n${claudeResult.output.slice(0, 500)}\n`
+      );
     }
 
     // Parse response
-    try {
-      // When using --output-format json, the output is wrapped in a JSON object
-      // with the actual response in the "result" field
-      let textToSearch = claudeResult.output;
-
-      // Try to extract the "result" field from JSON wrapper
-      const wrapperMatch = claudeResult.output.match(/"result"\s*:\s*"([\s\S]*?)(?:","stop_reason|"\s*,\s*"stop_reason)/);
-      if (wrapperMatch) {
-        // Unescape the JSON string
-        textToSearch = wrapperMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-      }
-
-      // Find the issueType JSON within the text (may be in a code block)
-      const jsonMatch = textToSearch.match(/\{[^{}]*"issueType"[^{}]*\}/s);
-      if (!jsonMatch) {
-        // Try a more lenient pattern for nested objects
-        const lenientMatch = textToSearch.match(/\{\s*"issueType"\s*:\s*"[^"]+?"[\s\S]*?"confidence"\s*:\s*[\d.]+\s*\}/);
-        if (!lenientMatch) {
-          if (process.env['DEBUG']) {
-            process.stderr.write(`[DEBUG] No JSON found in response. Text to search:\n${textToSearch.slice(0, 1000)}\n`);
-          }
-          return ok(this.getFallbackTaskAnalysis(task));
-        }
-        const parsed = JSON.parse(lenientMatch[0]) as TaskAnalysis;
-        return ok(parsed);
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]) as TaskAnalysis;
-      return ok(parsed);
-    } catch (parseError) {
+    const parsed = parseTaskAnalysisResult(claudeResult.output);
+    if (!parsed) {
       if (process.env['DEBUG']) {
-        process.stderr.write(`[DEBUG] Parse error: ${parseError}\n`);
+        process.stderr.write(
+          `[DEBUG] No JSON found in response. Output:\n${claudeResult.output.slice(0, 1000)}\n`
+        );
       }
       return ok(this.getFallbackTaskAnalysis(task));
     }
+
+    return ok(parsed as TaskAnalysis);
   }
 
   /**
@@ -628,8 +276,8 @@ Use these tools to find relevant files and understand the code structure before 
 
 Task Name: ${task.name}
 Description: ${task.notes || '(no description)'}
-Tags: ${task.tags?.map(t => t.name).join(', ') || '(none)'}
-Custom Fields: ${task.customFields?.map(f => `${f.name}: ${f.displayValue || f.textValue || f.enumValue?.name || ''}`).join(', ') || '(none)'}
+Tags: ${task.tags?.map((t) => t.name).join(', ') || '(none)'}
+Custom Fields: ${task.customFields?.map((f) => `${f.name}: ${f.displayValue || f.textValue || f.enumValue?.name || ''}`).join(', ') || '(none)'}
 
 ## Your Analysis Steps
 
@@ -677,7 +325,7 @@ The confidence should be HIGH (0.7-1.0) if you found actual files, MEDIUM (0.4-0
     }
 
     // Extract priority from custom fields if available
-    const priorityField = task.customFields?.find(f =>
+    const priorityField = task.customFields?.find((f) =>
       f.name.toLowerCase().includes('priority')
     );
     let priority: TaskAnalysis['priority'] = 'medium';
@@ -689,12 +337,10 @@ The confidence should be HIGH (0.7-1.0) if you found actual files, MEDIUM (0.4-0
     }
 
     // Extract component from custom fields
-    const componentField = task.customFields?.find(f =>
+    const componentField = task.customFields?.find((f) =>
       f.name.toLowerCase().includes('component')
     );
-    const component = componentField?.enumValue?.name ||
-                      componentField?.textValue ||
-                      'general';
+    const component = componentField?.enumValue?.name || componentField?.textValue || 'general';
 
     return {
       issueType,
@@ -712,7 +358,7 @@ The confidence should be HIGH (0.7-1.0) if you found actual files, MEDIUM (0.4-0
    * Generate a commit message for the group
    */
   generateCommitMessage(group: IssueGroup): string {
-    const issueNumbers = group.issues.map(i => `#${i.number}`).join(', ');
+    const issueNumbers = group.issues.map((i) => `#${i.number}`).join(', ');
 
     if (group.issues.length === 1) {
       const issue = group.issues[0]!;

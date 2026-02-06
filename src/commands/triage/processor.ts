@@ -87,7 +87,10 @@ export class TaskProcessor {
     const asanaListTool = createAsanaListTool(this.client);
 
     // Get processed section GID
-    const processedSectionResult = await this.getProcessedSectionGid(asanaListTool, limitedTasks[0]);
+    const firstTask = limitedTasks[0];
+    const processedSectionResult = firstTask !== undefined
+      ? await this.getProcessedSectionGid(asanaListTool, firstTask)
+      : { success: false as const, data: undefined };
     const processedSectionGid = processedSectionResult.success ? processedSectionResult.data : undefined;
 
     for (const task of limitedTasks) {

@@ -57,7 +57,7 @@ function generateFailureSummary(
 ): Omit<FailureSummary, 'issueComment'> {
   const lastAttempt = attempts[attempts.length - 1];
   const reason = determinePrimaryReason(attempts);
-  const failedChecks = extractFailedChecks(lastAttempt);
+  const failedChecks = lastAttempt !== undefined ? extractFailedChecks(lastAttempt) : [];
   const suggestions = generateSuggestions(group, attempts);
 
   return {
